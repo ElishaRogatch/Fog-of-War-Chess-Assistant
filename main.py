@@ -1,15 +1,16 @@
 import tkinter as tk
 from tkinter import messagebox
-import chess
-import chess.pgn
+import fow_chess
 import sqlite3
 from fow_engine import FoW_Engine1
-from tkinter import simpledialog
 from input_processor import InputProcessor
 from board_draw import DrawBoard
 from play_game import PlayGame
 from database import Database
 from game_over import GameOver
+
+
+
 
 class ChessGUI:
     def __init__(self, root):
@@ -18,7 +19,7 @@ class ChessGUI:
         self.connection = sqlite3.connect("fogofwar.db")
         self.cursor = self.connection.cursor()
         # initializes board
-        self.board = chess.Board()
+        self.board = fow_chess.FowBoard()
         self.root.title("Two-Player Chess Game")
         # Chess board size
         self.board_size = 8
@@ -43,7 +44,7 @@ class ChessGUI:
         self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.board_draw, self.connection, self.cursor, self.database, self.game_over, self.is_white_turn, self.engine, self.biases)
         self.suggest_move_button = self.play_game.suggest_move_button
         self.suggest_move_button.pack(side=tk.LEFT)
-    
+        
         self.play_game.update_suggest_button_state()
         # initilaizes moves
         self.moves = ""
@@ -105,3 +106,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ChessGUI(root)
     root.mainloop()
+    
