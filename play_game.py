@@ -190,4 +190,3 @@ class PlayGame:
                     fill="blue", tags="dot" # the dots are blue and will stay blue lol
                 )
                 self.move_dots.append(dot)
-                
