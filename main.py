@@ -69,9 +69,9 @@ class ChessGUI:
         print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=self.print_captured_pieces)
         print_captured_button.pack(side=tk.LEFT)
         # ran here once to set up original visibility for player 1
-        self.database.update_visibility_white(list(self.board.pseudo_legal_moves))
+        self.database.update_visibility_white(list(self.board.fow_legal_moves))
         # ran here once to set up original visibility for player 2
-        self.database.update_visibility_black(list(self.board.pseudo_legal_moves))
+        self.database.update_visibility_black(list(self.board.fow_legal_moves))
         # white starts first therefore we run this here
         self.board_draw.draw_fog_white()
     
