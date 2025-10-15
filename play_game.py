@@ -1,7 +1,6 @@
 import chess
 import tkinter as tk
 from tkinter import messagebox
-import sqlite3
 
 class PlayGame:
     def __init__(self, root, board, canvas, square_size, board_draw, connection, cursor, database, game_over, is_white_turn, engine, bias):
@@ -75,7 +74,7 @@ class PlayGame:
                 move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
             else:
                 move = chess.Move(self.selected_square, clicked_square)
-            if move in self.board.pseudo_legal_moves:
+            if move in self.board.fow_legal_moves:
                 
                 # end of og onto new way to stop castling problem
                 # Check if this is a castling move:
@@ -94,10 +93,10 @@ class PlayGame:
                 # updates the visibility part of the database for player 1's perspective only
                 # I have it set to not because where it is located it will see the next player 1's move options therefore after the piece is moved
                 if not self.is_white_turn:
-                    self.database.update_visibility_white(list(self.board.pseudo_legal_moves))
+                    self.database.update_visibility_white(list(self.board.fow_legal_moves))
                 
                 if self.is_white_turn:
-                    self.database.update_visibility_black(list(self.board.pseudo_legal_moves))
+                    self.database.update_visibility_black(list(self.board.fow_legal_moves))
 
                 # Check for game-ending conditions
                 if self.game_over.check_game_over(self.is_white_turn):
@@ -174,7 +173,7 @@ class PlayGame:
 
     def show_possible_moves(self, square):
         """Show dots on squares where the selected piece can move."""
-        for move in self.board.pseudo_legal_moves:
+        for move in self.board.fow_legal_moves:
             if move.from_square == square:
                 # Calculate the position of the destination square
                 to_col = chess.square_file(move.to_square)

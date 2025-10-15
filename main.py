@@ -1,10 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
-import chess
-import chess.pgn
+import fow_chess
 import sqlite3
 from fow_engine import FoW_Engine1
-from tkinter import simpledialog
 from input_processor import InputProcessor
 from board_draw import DrawBoard
 from play_game import PlayGame
@@ -18,7 +16,7 @@ class ChessGUI:
         self.connection = sqlite3.connect("fogofwar.db")
         self.cursor = self.connection.cursor()
         # initializes board
-        self.board = chess.Board()
+        self.board = fow_chess.FowBoard()
         self.root.title("Two-Player Chess Game")
         # Chess board size
         self.board_size = 8
@@ -43,7 +41,7 @@ class ChessGUI:
         self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.board_draw, self.connection, self.cursor, self.database, self.game_over, self.is_white_turn, self.engine, self.biases)
         self.suggest_move_button = self.play_game.suggest_move_button
         self.suggest_move_button.pack(side=tk.LEFT)
-    
+        
         self.play_game.update_suggest_button_state()
         # initilaizes moves
         self.moves = ""
@@ -68,9 +66,9 @@ class ChessGUI:
         print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=self.print_captured_pieces)
         print_captured_button.pack(side=tk.LEFT)
         # ran here once to set up original visibility for player 1
-        self.database.update_visibility_white(list(self.board.pseudo_legal_moves))
+        self.database.update_visibility_white(list(self.board.fow_legal_moves))
         # ran here once to set up original visibility for player 2
-        self.database.update_visibility_black(list(self.board.pseudo_legal_moves))
+        self.database.update_visibility_black(list(self.board.fow_legal_moves))
         # white starts first therefore we run this here
         self.board_draw.draw_fog_white()
     
