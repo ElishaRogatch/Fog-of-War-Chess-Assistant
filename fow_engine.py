@@ -1,9 +1,6 @@
 import chess
 import chess.engine
 import sqlite3
-import json
-from output_processor import OutputProcessor
-#from prediction_tree import PredictionTree
 import platform
 from bias_eval import BiasScorer
 import tkinter as tk
