@@ -2,9 +2,6 @@ import chess
 import tkinter as tk
 from tkinter import messagebox
 
-
-
-
 class PlayGame:
     def __init__(self, root, board, canvas, square_size, board_draw, connection, cursor, database, game_over, is_white_turn, engine, bias):
         self.root = root

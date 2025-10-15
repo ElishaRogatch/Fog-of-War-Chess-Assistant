@@ -9,9 +9,6 @@ from play_game import PlayGame
 from database import Database
 from game_over import GameOver
 
-
-
-
 class ChessGUI:
     def __init__(self, root):
         self.root = root
