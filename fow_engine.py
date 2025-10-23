@@ -21,7 +21,6 @@ class FoW_Engine1:
         print(f"[DEBUG] Using Stockfish at: {SF_Path}")
 
         self.engine = chess.engine.SimpleEngine.popen_uci(SF_Path)
-        self.past_move = self.board.pop()
         self.bias = bias_dict
         self.bias_scorer = BiasScorer(self.bias)
         print(f"[DEBUG] Bias config loaded: {self.bias}")
@@ -48,8 +47,9 @@ class FoW_Engine1:
                 stockfish_score = entry["score"].pov(self.board.turn).score(mate_score=10000)
                 if stockfish_score is None:
                     stockfish_score = 0
-                adjusted_score = self.bias_scorer.get_bias_score(move, stockfish_score, self.board, is_black_turn=False)
-                scored_guesses.append((move, adjusted_score))
+                #adjusted_score = self.bias_scorer.get_bias_score(move, stockfish_score, self.board, is_black_turn=False)
+                #scored_guesses.append((move, adjusted_score))
+                scored_guesses.append((move, stockfish_score))
 
             scored_guesses.sort(key=lambda x: x[1], reverse=True)
             print("Suggested Moves for White:")
