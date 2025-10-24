@@ -168,7 +168,6 @@ class FowBoard(Board):
             if self.ep_square:
                 yield from self.generate_pseudo_legal_ep(from_mask, to_mask)
 
-
     # The same as generate_castling_moves from chess with the exception of allowing castling through "check" as it is a fow legal move
     def generate_fow_castling_moves(self, from_mask: Bitboard = BB_ALL, to_mask: Bitboard = BB_ALL) -> Iterator[Move]:
         if self.is_variant_end():
@@ -197,3 +196,38 @@ class FowBoard(Board):
 
             if not (self.occupied ^ king ^ rook) & (king_path | rook_path | king_to | rook_to):
                 yield self._from_chess960(self.chess960, msb(king), candidate)
+      
+    # Modified version of outcome function that makes draws manditory if possible and doesn't check regular chess end conditions          
+    def outcome(self) -> Optional[Outcome]:
+        """
+        Check if the game is over due to,
+        the :func:`fifty-move rule <chess.Board.is_fifty_moves()>`,
+        :func:`threefold repetition <chess.Board.is_repetition()>`,
+        or a :func:`variant end condition <chess.Board.is_variant_end()>`.
+        Returns the :class:`chess.Outcome` if the game has ended, otherwise
+        ``None``.
+        """
+        # Variant support.
+        if self.is_variant_loss():
+            return Outcome(Termination.VARIANT_LOSS, not self.turn)
+        if self.is_variant_win():
+            return Outcome(Termination.VARIANT_WIN, self.turn)
+        if self.is_variant_draw():
+            return Outcome(Termination.VARIANT_DRAW, None)
+
+        # Automatic draws.
+        if self.is_fifty_moves():
+            return Outcome(Termination.FIFTY_MOVES, None)
+        if self.is_repetition():
+            return Outcome(Termination.THREEFOLD_REPETITION, None)
+        
+        return None
+    
+    def is_variant_loss(self) -> bool:
+        """
+        Checks if the current side to move lost due to a variant-specific
+        condition.
+        """
+        if not self.pieces_mask(KING, self.turn): # if no king is found in your pieces you lose
+            return True
+        return False

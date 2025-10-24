@@ -1,10 +1,9 @@
 import chess
+from chess import SQUARES, Bitboard, BB_SQUARES, BB_EMPTY
 import tkinter as tk
-from tkinter import messagebox
-import sqlite3
 
 class DrawBoard:
-    def __init__(self, root, board, board_size, square_size, canvas, connection, cursor):
+    def __init__(self, root, board, board_size, square_size, canvas):
         self.root = root
         # Chess board size
         self.board_size = board_size
@@ -14,8 +13,6 @@ class DrawBoard:
         self.canvas = canvas
         # Load piece images
         self.piece_images = self.load_piece_images()
-        self.cursor = cursor
-        self.connection = connection
 
     def load_piece_images(self):
         """Load piece images from files (you can use any chess piece images here)."""
@@ -74,58 +71,41 @@ class DrawBoard:
                         y = row * self.square_size
                         self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, 
                                                  image=image, tags="piece")
-                        
-    def draw_fog_white(self):
+      
+    def get_visibility(self, legal_moves) -> Bitboard:
+        """Gets the visibility mask for the player to move"""
+        move_squares = [move.to_square for move in legal_moves]
+        BB_MOVE_TO = BB_EMPTY
+        for square in move_squares:
+            BB_MOVE_TO = BB_MOVE_TO | BB_SQUARES[square]
+        return self.board.occupied_co[self.board.turn] | BB_MOVE_TO
+        
+    def draw_fog(self, legal_moves):
         """Draws a fog overlay on squares that aren't visible to the white player."""
-        self.cursor.execute("SELECT * FROM chessboard;")
-        results = self.cursor.fetchall()
-
         # Clear any previous fog overlay
         self.canvas.delete("fog")
         
         # Define the fog color (you can use a semi-transparent color or adjust opacity)
-        fog_color = "red"  # Light red with transparency (note: Tkinter doesn't support RGBA natively, so use a solid color or check transparency options for your canvas)
-
-        for row in results:
-            col, rw, _, piece, visW, _ = row  # Extract the necessary fields
-            
-            # Check visibility for white player
-            if not visW:  # If visW is False, draw fog
-                # Calculate the pixel coordinates for the square
-                x1 = (ord(col) - ord('A')) * self.square_size
-                y1 = (8 - rw) * self.square_size  # 8x8 board with A1 at bottom-left
+        if self.board.turn: #If white turn
+            fog_color = "red"  # Light red with transparency (note: Tkinter doesn't support RGBA natively, so use a solid color or check transparency options for your canvas)
+        else:
+            fog_color = "purple"  # You can adjust the color as needed
+        
+        BB_VISIBILITY: Bitboard = self.get_visibility(legal_moves)
+        for square in SQUARES:
+            if not BB_SQUARES[square] & BB_VISIBILITY: #If the square is not visible
+                col = square % 8
+                row = (square - col) / 8
+                # Calculate the pixel coordinates for the square; 8x8 board with A1 at bottom-left
+                x1 = col * self.square_size
+                y1 = (7 - row) * self.square_size  
                 x2 = x1 + self.square_size
                 y2 = y1 + self.square_size
-                            
+                
                 # Draw a fog rectangle over the square
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=fog_color, tags="fog")
         
-        print("Fog overlay has been drawn for white player.")
-
-
-    def draw_fog_black(self):
-        """Draws a fog overlay on squares that aren't visible to the black player."""
-        self.cursor.execute("SELECT * FROM chessboard;")
-        results = self.cursor.fetchall()
-
-        # Clear any previous fog overlay
-        self.canvas.delete("fog")
-        
-        # Define the fog color
-        fog_color = "purple"  # You can adjust the color as needed
-
-        for row in results:
-            col, rw, _, _, _, visB = row  # Extract the necessary fields
-            
-            # Check visibility for black player
-            if not visB:  # If visB is False, draw fog
-                # Calculate the pixel coordinates for the square
-                x1 = (ord(col) - ord('A')) * self.square_size
-                y1 = (8 - rw) * self.square_size  # 8x8 board with A1 at bottom-left
-                x2 = x1 + self.square_size
-                y2 = y1 + self.square_size
-                            
-                # Draw a fog rectangle over the square
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=fog_color, tags="fog")
-        
-        print("Fog overlay has been drawn for black player.")
+        if self.board.turn: #If white turn
+            print("Fog overlay has been drawn for white player.")
+        else:
+            print("Fog overlay has been drawn for black player.")
