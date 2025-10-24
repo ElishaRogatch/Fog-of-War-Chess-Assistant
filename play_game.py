@@ -80,7 +80,7 @@ class PlayGame:
                 self.update_suggest_button_state()
                 self.update_turn_label()
                 # draw the fog for the player
-                self.board_draw.draw_fog(list(self.board.fow_legal_moves))
+                self.board_draw.draw_fog()
 
             # Reset selected square
             self.selected_square = None

@@ -231,3 +231,11 @@ class FowBoard(Board):
         if not self.pieces_mask(KING, self.turn): # if no king is found in your pieces you lose
             return True
         return False
+    
+    def get_fow_visibility(self) -> Bitboard:
+        """Gets the visibility mask for the player to move"""
+        move_squares = [move.to_square for move in list(self.fow_legal_moves)]
+        BB_MOVE_TO = BB_EMPTY
+        for square in move_squares:
+            BB_MOVE_TO = BB_MOVE_TO | BB_SQUARES[square]
+        return self.occupied_co[self.turn] | BB_MOVE_TO

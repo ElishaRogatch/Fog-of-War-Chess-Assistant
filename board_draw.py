@@ -1,5 +1,6 @@
 import chess
-from chess import SQUARES, Bitboard, BB_SQUARES, BB_EMPTY
+from chess import SQUARES, Bitboard, BB_SQUARES
+import fow_chess
 import tkinter as tk
 
 class DrawBoard:
@@ -71,16 +72,8 @@ class DrawBoard:
                         y = row * self.square_size
                         self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, 
                                                  image=image, tags="piece")
-      
-    def get_visibility(self, legal_moves) -> Bitboard:
-        """Gets the visibility mask for the player to move"""
-        move_squares = [move.to_square for move in legal_moves]
-        BB_MOVE_TO = BB_EMPTY
-        for square in move_squares:
-            BB_MOVE_TO = BB_MOVE_TO | BB_SQUARES[square]
-        return self.board.occupied_co[self.board.turn] | BB_MOVE_TO
         
-    def draw_fog(self, legal_moves):
+    def draw_fog(self):
         """Draws a fog overlay on squares that aren't visible to the white player."""
         # Clear any previous fog overlay
         self.canvas.delete("fog")
@@ -91,7 +84,7 @@ class DrawBoard:
         else:
             fog_color = "purple"  # You can adjust the color as needed
         
-        BB_VISIBILITY: Bitboard = self.get_visibility(legal_moves)
+        BB_VISIBILITY: Bitboard = self.board.get_fow_visibility()
         for square in SQUARES:
             if not BB_SQUARES[square] & BB_VISIBILITY: #If the square is not visible
                 col = square % 8

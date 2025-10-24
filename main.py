@@ -58,7 +58,7 @@ class ChessGUI:
         print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=self.print_captured_pieces)
         print_captured_button.pack(side=tk.LEFT)
         # Draw the inital fog
-        self.board_draw.draw_fog(list(self.board.fow_legal_moves))
+        self.board_draw.draw_fog()
     
     def print_captured_pieces(self):
         """Print the captured pieces for both players."""
