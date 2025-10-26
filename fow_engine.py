@@ -13,14 +13,14 @@ class FoW_Engine1:
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
         if system_name == "Windows":
-            SF_Path = "stockfish-windows-x86-64-sse41-popcnt.exe"
+            SF_Path = "fairy-stockfish_x86-64.exe"
         elif system_name == "Darwin":  #MacOS
             SF_Path = "our path to stockfish MACOS"
         elif system_name == "Linux":
             SF_Path = "our path to stockfish Linux"
         print(f"[DEBUG] Using Stockfish at: {SF_Path}")
 
-        self.engine = chess.engine.SimpleEngine.popen_uci(SF_Path)
+        self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
         self.bias = bias_dict
         self.bias_scorer = BiasScorer(self.bias)
         print(f"[DEBUG] Bias config loaded: {self.bias}")
