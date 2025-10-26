@@ -13,7 +13,7 @@ class FoW_Engine1:
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
         if system_name == "Windows":
-            SF_Path = "fairy-stockfish_x86-64.exe"
+            SF_Path = "fairy-stockfish_x86-64-bmi2.exe"
         elif system_name == "Darwin":  #MacOS
             SF_Path = "our path to stockfish MACOS"
         elif system_name == "Linux":
