@@ -234,6 +234,35 @@ class FowBoard(Board):
             return True
         return False
     
+    # Modified version of parse_uci function that sees if the move is fow_legal not regular legal, and prevents engine errors
+    def parse_uci(self, uci: str) -> Move:
+        """
+        Parses the given move in UCI notation.
+
+        Supports both Chess960 and standard UCI notation.
+
+        The returned move is guaranteed to be either legal or a null move.
+
+        :raises:
+            :exc:`ValueError` (specifically an exception specified below) if the move is invalid or illegal in the
+            current position (but not a null move).
+
+            - :exc:`InvalidMoveError` if the UCI is syntactically invalid.
+            - :exc:`IllegalMoveError` if the UCI is illegal.
+        """
+        move = Move.from_uci(uci)
+
+        if not move:
+            return move
+
+        move = self._to_chess960(move)
+        move = self._from_chess960(self.chess960, move.from_square, move.to_square, move.promotion, move.drop)
+
+        if not self.is_fow_legal(move):
+            raise IllegalMoveError(f"illegal uci: {uci!r} in {self.fen()}")
+
+        return move
+    
     def get_fow_visibility(self) -> Bitboard:
         """Gets the visibility mask for the player to move"""
         move_squares = [move.to_square for move in list(self.fow_legal_moves)]
