@@ -34,9 +34,8 @@ class LegalFowMoveGenerator:
 
 
 class FowBoard(Board):
-    uci_variant = "fow"
-    
     """A child class of Board that implements the legal move changes that make the legal moves complient with fow chess rules"""
+    uci_variant = "fow"
         
     @property
     def fow_legal_moves(self) -> LegalFowMoveGenerator:
