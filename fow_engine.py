@@ -1,6 +1,5 @@
 import chess
 import chess.engine
-import sqlite3
 import platform
 from bias_eval import BiasScorer
 from tkinter import messagebox
@@ -13,14 +12,14 @@ class FoW_Engine1:
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
         if system_name == "Windows":
-            SF_Path = "stockfish-windows-x86-64-sse41-popcnt.exe"
+            SF_Path = "fairy-stockfish_x86-64-bmi2.exe"
         elif system_name == "Darwin":  #MacOS
             SF_Path = "our path to stockfish MACOS"
         elif system_name == "Linux":
             SF_Path = "our path to stockfish Linux"
         print(f"[DEBUG] Using Stockfish at: {SF_Path}")
 
-        self.engine = chess.engine.SimpleEngine.popen_uci(SF_Path)
+        self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
         self.bias = bias_dict
         self.bias_scorer = BiasScorer(self.bias)
         print(f"[DEBUG] Bias config loaded: {self.bias}")
@@ -35,7 +34,7 @@ class FoW_Engine1:
     def suggest_player_move(self, max_guesses=5):
         try:
             if not hasattr(self, 'engine') or self.engine is None:
-                self.engine = chess.engine.SimpleEngine.popen_uci("stockfish-windows-x86-64-sse41-popcnt.exe")
+                self.engine = chess.engine.SimpleEngine.popen_uci(["fairy-stockfish_x86-64-bmi2.exe", "load", "variants.ini"])
 
             analysis = self.engine.analyse(self.board, chess.engine.Limit(depth=10), multipv=max_guesses)
             if not isinstance(analysis, list):
@@ -122,5 +121,3 @@ class FoW_Engine1:
         if result and result[0] == 1:
             return True
         return False
-
-

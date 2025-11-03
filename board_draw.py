@@ -1,6 +1,5 @@
 import chess
 from chess import SQUARES, Bitboard, BB_SQUARES
-import fow_chess
 import tkinter as tk
 
 class DrawBoard:
