@@ -83,9 +83,9 @@ class DrawBoard:
         else:
             fog_color = "purple"  # You can adjust the color as needed
         
-        BB_VISIBILITY: Bitboard = self.board.get_fow_visibility()
+        visibility: Bitboard = self.board.get_fow_visibility()
         for square in SQUARES:
-            if not BB_SQUARES[square] & BB_VISIBILITY: #If the square is not visible
+            if not BB_SQUARES[square] & visibility: #If the square is not visible
                 col = square % 8
                 row = (square - col) / 8
                 # Calculate the pixel coordinates for the square; 8x8 board with A1 at bottom-left

@@ -36,6 +36,10 @@ class LegalFowMoveGenerator:
 class FowBoard(Board):
     """A child class of Board that implements the legal move changes that make the legal moves complient with fow chess rules"""
     uci_variant = "fow"
+    
+    def __init__(self,*args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.stored_transposition_key = None
         
     @property
     def fow_legal_moves(self) -> LegalFowMoveGenerator:
@@ -265,7 +269,40 @@ class FowBoard(Board):
     def get_fow_visibility(self) -> Bitboard:
         """Gets the visibility mask for the player to move"""
         move_squares = [move.to_square for move in list(self.fow_legal_moves)]
-        BB_MOVE_TO = BB_EMPTY
+        move_to = BB_EMPTY
         for square in move_squares:
-            BB_MOVE_TO = BB_MOVE_TO | BB_SQUARES[square]
-        return self.occupied_co[self.turn] | BB_MOVE_TO
+            move_to = move_to | BB_SQUARES[square]
+        return self.occupied_co[self.turn] | move_to
+    
+    def get_semi_visibility(self, visible : Bitboard) -> Bitboard:
+        """Gets the semi visibility mask for the player to move. This is based on the pawn moves that are/aren't availiable."""
+        attack_moves = BB_EMPTY
+        single_moves = BB_EMPTY
+        double_moves = BB_EMPTY
+        pawns = self.pieces_mask(PAWN, self.turn)
+        for from_square in scan_reversed(pawns):
+            attack_moves = attack_moves | BB_PAWN_ATTACKS[self.turn][from_square]
+        attack_moves = attack_moves & ~visible
+        if self.turn == WHITE:
+            single_moves = pawns << 8
+            double_moves = (pawns << 16) & BB_RANK_4
+        else:
+            single_moves = pawns >> 8
+            double_moves = (pawns >> 16) & BB_RANK_5
+        single_moves = single_moves & ~visible
+        double_moves = double_moves & ~visible 
+        if self.turn == WHITE:
+            double_moves = double_moves & ~(single_moves << 8) & ~(self.occupied << 8)
+        else:
+            double_moves = double_moves & ~(single_moves >> 8) & ~(self.occupied >> 8)
+        return attack_moves | single_moves | double_moves
+        
+    def get_ep_visibility(self, visible) -> Bitboard:
+        """Gets the ep visibility mask for the player to move."""
+        ep_visible = BB_EMPTY
+        if self.ep_square and visible & BB_SQUARES[self.ep_square]:
+            if self.turn == WHITE:
+                ep_visible = BB_SQUARES[self.ep_square - 8]
+            else:
+                ep_visible = BB_SQUARES[self.ep_square + 8]
+        return ep_visible

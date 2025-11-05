@@ -1,5 +1,7 @@
 import chess
 import tkinter as tk
+from board_state_limiter import BoardStateLimiter
+import copy
 
 class PlayGame:
     def __init__(self, root, board, canvas, square_size, board_draw, game_over, engine, bias):
@@ -21,6 +23,7 @@ class PlayGame:
         self.turn_label.pack()
         self.bias = bias
         self.captured_pieces = []
+        self.BSL = BoardStateLimiter(self.board, [copy.deepcopy(self.board)])
 
     def start_engine(self): 
         # Run the engine
@@ -81,6 +84,12 @@ class PlayGame:
                 self.update_turn_label()
                 # draw the fog for the player
                 self.board_draw.draw_fog()
+                if self.board.turn: #black just moved # BSL CODE
+                    self.BSL.pre_move_limiting()
+                    print(f"Number of potential pre-turn states {len(self.BSL.old_board_states)}")
+                else: #white just moved
+                    self.BSL.post_move_limiting()
+                    print(f"Number of potential post-turn states {len(self.BSL.old_board_states)}")
 
             # Reset selected square
             self.selected_square = None
