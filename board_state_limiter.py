@@ -53,7 +53,7 @@ class BoardStateLimiter:
             return True
         
     def _remove_contradicting_states(self, boardstates):
-        visible = self.board.get_fow_visibility() # TODO add ep visibility square as we know the piece is a pawn
+        visible = self.board.get_fow_visibility()
         visible = visible | self.board.get_ep_visibility(visible)
         semi_visible = self.board.get_semi_visibility(visible)
         # remove any states that contradict visible observations
