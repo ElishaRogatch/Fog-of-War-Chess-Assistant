@@ -14,7 +14,6 @@ class PlayGame:
         self.board_draw = board_draw
         self.game_over = game_over
         # Track dots for move indicators
-        self.move_dots = []
         # Track selected square and moves
         self.selected_square = None
         self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command=self.start_engine)
@@ -49,9 +48,9 @@ class PlayGame:
         # placed here so that it is storing the current player's moves and not the next player
 
         # Clear existing move dots when clicking a new square
-        for dot in self.move_dots:
+        for dot in self.board_draw.move_dots:
             self.canvas.delete(dot)
-        self.move_dots = []
+        self.board_draw.move_dots = []
 
         if self.selected_square is None:
             # Select the piece if any
@@ -59,7 +58,7 @@ class PlayGame:
             if piece and piece.color == self.board.turn:  # Ensure the player selects their own piece
                 self.selected_square = clicked_square
                 # Display possible moves for the selected piece
-                self.show_possible_moves(clicked_square)
+                self.board_draw.show_possible_moves(clicked_square)
         else:
             # Try to make a move
             if (str(self.board.piece_at(self.selected_square)).upper()=='P' and (clicked_square >= 56 or clicked_square <= 7)):
@@ -93,20 +92,3 @@ class PlayGame:
 
             # Reset selected square
             self.selected_square = None
-
-    def show_possible_moves(self, square):
-        """Show dots on squares where the selected piece can move."""
-        for move in self.board.fow_legal_moves:
-            if move.from_square == square:
-                # Calculate the position of the destination square
-                to_col = chess.square_file(move.to_square)
-                to_row = 7 - chess.square_rank(move.to_square)
-                
-                # Place a dot in the center of each possible move square
-                x = to_col * self.square_size + self.square_size // 2
-                y = to_row * self.square_size + self.square_size // 2
-                dot = self.canvas.create_oval(
-                    x - 5, y - 5, x + 5, y + 5,
-                    fill="blue", tags="dot" # the dots are blue and will stay blue lol
-                )
-                self.move_dots.append(dot)
