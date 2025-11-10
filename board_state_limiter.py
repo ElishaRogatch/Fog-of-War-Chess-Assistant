@@ -17,7 +17,7 @@ class BoardStateLimiter:
     
     def pre_move_limiting(self):
         for boardstate in self.old_board_states:
-            for move in list(boardstate.fow_legal_moves):
+            for move in boardstate.fow_legal_moves:
                 new_boardstate = copy.copy(boardstate)
                 new_boardstate.push(move)
                 # check to make sure that if a capture occurs the potential states reflect that
@@ -32,7 +32,6 @@ class BoardStateLimiter:
         # make new states the old states (for next move)
         self.old_board_states = self.new_board_states
         self.new_board_states = []
-        pass
     
     def _does_match_visibility(self, board1, board2, visible, semi_visible):
         if ~board1.occupied & (visible | semi_visible) != ~board2.occupied & (visible | semi_visible): # empty squares don't match

@@ -268,7 +268,7 @@ class FowBoard(Board):
     
     def get_fow_visibility(self) -> Bitboard:
         """Gets the visibility mask for the player to move"""
-        move_squares = [move.to_square for move in list(self.fow_legal_moves)]
+        move_squares = [move.to_square for move in self.fow_legal_moves]
         move_to = BB_EMPTY
         for square in move_squares:
             move_to = move_to | BB_SQUARES[square]
