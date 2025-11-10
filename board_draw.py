@@ -13,6 +13,7 @@ class DrawBoard:
         self.canvas = canvas
         # Load piece images
         self.piece_images = self.load_piece_images()
+        self.move_dots = []
 
     def load_piece_images(self):
         """Load piece images from files (you can use any chess piece images here)."""
@@ -83,9 +84,9 @@ class DrawBoard:
         else:
             fog_color = "purple"  # You can adjust the color as needed
         
-        BB_VISIBILITY: Bitboard = self.board.get_fow_visibility()
+        visibility: Bitboard = self.board.get_fow_visibility()
         for square in SQUARES:
-            if not BB_SQUARES[square] & BB_VISIBILITY: #If the square is not visible
+            if not BB_SQUARES[square] & visibility: #If the square is not visible
                 col = square % 8
                 row = (square - col) / 8
                 # Calculate the pixel coordinates for the square; 8x8 board with A1 at bottom-left
@@ -101,3 +102,20 @@ class DrawBoard:
             print("Fog overlay has been drawn for white player.")
         else:
             print("Fog overlay has been drawn for black player.")
+            
+    def show_possible_moves(self, square):
+        """Show dots on squares where the selected piece can move."""
+        for move in self.board.fow_legal_moves:
+            if move.from_square == square:
+                # Calculate the position of the destination square
+                to_col = chess.square_file(move.to_square)
+                to_row = 7 - chess.square_rank(move.to_square)
+                
+                # Place a dot in the center of each possible move square
+                x = to_col * self.square_size + self.square_size // 2
+                y = to_row * self.square_size + self.square_size // 2
+                dot = self.canvas.create_oval(
+                    x - 5, y - 5, x + 5, y + 5,
+                    fill="blue", tags="dot" # the dots are blue and will stay blue lol
+                )
+                self.move_dots.append(dot)

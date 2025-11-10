@@ -34,11 +34,7 @@ class ChessGUI:
         self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.board_draw, self.game_over, self.engine, self.biases)
         self.suggest_move_button = self.play_game.suggest_move_button
         self.suggest_move_button.pack(side=tk.LEFT)
-        
         self.play_game.update_suggest_button_state()
-        # initilaizes moves
-        self.moves = ""
-        
         self.board_draw.draw_board()
         # Place pieces on the board
         self.board_draw.update_pieces()
@@ -55,8 +51,8 @@ class ChessGUI:
         # self.move_list = []
         # print_moves_button = tk.Button(self.root, text="Print Move History", command=self.database.print_moves)
         # print_moves_button.pack(side=tk.LEFT)
-        print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=self.print_captured_pieces)
-        print_captured_button.pack(side=tk.LEFT)
+        self.print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=self.print_captured_pieces)
+        self.print_captured_button.pack(side=tk.LEFT)
         # Draw the inital fog
         self.board_draw.draw_fog()
     
