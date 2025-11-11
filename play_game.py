@@ -62,28 +62,32 @@ class PlayGame:
         else:
             # Try to make a move
             if (str(self.board.piece_at(self.selected_square)).upper()=='P' and (clicked_square >= 56 or clicked_square <= 7)):
-                # have user choose promotion piece
-                self.canvas.configure(state=tk.DISABLED)
-                promotion_selection = tk.Toplevel(self.root)
-                promotion_selection.geometry("300x200")
-                promotion_selection.title("Pawn Promotion")
-                promotion_selection.grab_set() # prevent user from interacting with other tkinter elements
-                promotion_piece = tk.StringVar(value="Queen")
-                tk.Label(promotion_selection, text="Select Promotion Piece").pack(side= tk.TOP)
-                tk.OptionMenu(promotion_selection, promotion_piece, "Queen", "Rook", "Bishop", "Knight").pack(side= tk.TOP)
-                tk.Button(promotion_selection, text="Ok", command= lambda: promotion_selection.destroy()).pack(pady=10, side= tk.BOTTOM)
-                self.root.wait_window(promotion_selection) # pause code execution until user makes a choice
-                if promotion_piece.get() == "Knight":
-                    move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"n")
-                elif promotion_piece.get() == "Bishop":
-                    move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"b")
-                elif promotion_piece.get() == "Rook":
-                    move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"r")
-                else: # selected piece is queen
-                    move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
+                move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
+                ask_promotion = True
             else:
                 move = chess.Move(self.selected_square, clicked_square)
+                ask_promotion = False
             if move in self.board.fow_legal_moves:
+                if ask_promotion:
+                    # have user choose promotion piece
+                    self.canvas.configure(state=tk.DISABLED)
+                    promotion_selection = tk.Toplevel(self.root)
+                    promotion_selection.geometry("300x200")
+                    promotion_selection.title("Pawn Promotion")
+                    promotion_selection.grab_set() # prevent user from interacting with other tkinter elements
+                    promotion_piece = tk.StringVar(value="Queen")
+                    tk.Label(promotion_selection, text="Select Promotion Piece").pack(side= tk.TOP)
+                    tk.OptionMenu(promotion_selection, promotion_piece, "Queen", "Rook", "Bishop", "Knight").pack(side= tk.TOP)
+                    tk.Button(promotion_selection, text="Ok", command= lambda: promotion_selection.destroy()).pack(pady=10, side= tk.BOTTOM)
+                    self.root.wait_window(promotion_selection) # pause code execution until user makes a choice
+                    if promotion_piece.get() == "Knight":
+                        move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"n")
+                    elif promotion_piece.get() == "Bishop":
+                        move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"b")
+                    elif promotion_piece.get() == "Rook":
+                        move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"r")
+                    else: # selected piece is queen
+                        move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
                 captured_piece = self.board.piece_at(clicked_square)
                 if captured_piece: # if captured_piece is not None
                     print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
