@@ -2,12 +2,14 @@ from tkinter import messagebox
 import chess
 
 class GameOver: 
-    def __init__(self, root, board):
+    def __init__(self, root, board, engine):
         self.root = root
         self.board = board
+        self.engine = engine
 
     def quit_game(self):
-
+        # close chess engine
+        self.engine.close_engine()
         # Close the GUI window
         self.root.quit()
         print("Game ended")

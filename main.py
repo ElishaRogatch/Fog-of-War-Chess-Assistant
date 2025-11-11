@@ -23,8 +23,9 @@ class ChessGUI:
         self.is_white_turn = True
         # Create an instance of FoW_Engine1
         self.engine = FoW_Engine1(self.board)
+        self.engine.start_engine()
         # initialize GameOver
-        self.game_over = GameOver(self.root, self.board)
+        self.game_over = GameOver(self.root, self.board, self.engine)
         # makes instance of DrawBoard
         self.board_draw = DrawBoard(self.root, self.board, self.board_size, self.square_size, self.canvas)
         # Create an instance of InputProcessor and set a variable for bias

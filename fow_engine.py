@@ -8,7 +8,7 @@ class FoW_Engine1:
     def __init__(self, board):
         self.board = board
 
-    def run_engine(self, bias_dict):
+    def start_engine(self):
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
         if system_name == "Windows":
@@ -20,21 +20,27 @@ class FoW_Engine1:
         print(f"[DEBUG] Using Stockfish at: {SF_Path}")
 
         self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
-        self.bias = bias_dict
-        self.bias_scorer = BiasScorer(self.bias)
-        print(f"[DEBUG] Bias config loaded: {self.bias}")
+        #self.bias = bias_dict
+        #self.bias_scorer = BiasScorer(self.bias)
+        #print(f"[DEBUG] Bias config loaded: {self.bias}")
 
         #print("Evaluating predictions")
         #self.evaluate_moves() TEMP: Disable prediction for black, just predict with whole board visible
         #print("board after prediction")
         #print(self.board)
-        print("Suggesting best move options")
-        self.suggest_player_move()
+        
+    def close_engine(self):
+        try:
+            if self.engine:
+                self.engine.quit()
+        except chess.engine.EngineTerminatedError:
+            print("Engine already terminated.")
 
     def suggest_player_move(self, max_guesses=5):
+        print("Suggesting best move options")
         try:
             if not hasattr(self, 'engine') or self.engine is None:
-                self.engine = chess.engine.SimpleEngine.popen_uci(["fairy-stockfish_x86-64-bmi2.exe", "load", "variants.ini"])
+                self.start_engine()
 
             analysis = self.engine.analyse(self.board, chess.engine.Limit(depth=10), multipv=max_guesses)
             if not isinstance(analysis, list):
@@ -58,11 +64,30 @@ class FoW_Engine1:
             messagebox.showinfo("Top 5 Move Suggestions and Scores", scored_guesses)
             
         finally:
-            try:
-                if self.engine:
-                    self.engine.quit()
-            except chess.engine.EngineTerminatedError:
-                print("Engine already terminated.")
+            pass
+            #try:
+            #    if self.engine:
+            #        self.engine.quit()
+            #except chess.engine.EngineTerminatedError:
+            #    print("Engine already terminated.")
+            
+    def board_state_analysis(self, board):
+        try:
+            if not hasattr(self, 'engine') or self.engine is None:
+                self.start_engine()
+
+            analysis = self.engine.analyse(board, chess.engine.Limit(depth=5))
+            
+            if not isinstance(analysis, list):
+                analysis = [analysis]
+            
+            stockfish_score = analysis[0]["score"].pov(self.board.turn).score(mate_score=10000)
+            if stockfish_score is None:
+                stockfish_score = 0
+            return stockfish_score
+        
+        finally:
+            pass
 
     def evaluate_moves(self):# unused artifact
         # Get top moves from Stockfish for black
