@@ -8,7 +8,7 @@ class FoW_Engine1:
     def __init__(self, board):
         self.board = board
 
-    def start_engine(self):
+    def start_engine(self, bias):
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
         if system_name == "Windows":
@@ -21,7 +21,7 @@ class FoW_Engine1:
 
         self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
         #self.bias = bias_dict
-        #self.bias_scorer = BiasScorer(self.bias)
+        self.bias_scorer = BiasScorer(bias)
         #print(f"[DEBUG] Bias config loaded: {self.bias}")
 
         #print("Evaluating predictions")
@@ -52,9 +52,10 @@ class FoW_Engine1:
                 stockfish_score = entry["score"].pov(self.board.turn).score(mate_score=10000)
                 if stockfish_score is None:
                     stockfish_score = 0
-                #adjusted_score = self.bias_scorer.get_bias_score(move, stockfish_score, self.board, is_black_turn=False)
-                #scored_guesses.append((move, adjusted_score))
-                scored_guesses.append((move, stockfish_score))
+                adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, self.board)
+                print("Stockfish score: ", stockfish_score, "\nAdjusted Score: ", adjusted_score)
+                scored_guesses.append((move, adjusted_score))
+                #scored_guesses.append((move, stockfish_score))
 
             scored_guesses.sort(key=lambda x: x[1], reverse=True)
             print("Suggested Moves for White:")
@@ -105,7 +106,7 @@ class FoW_Engine1:
 
 
                 stockfish_score = entry["score"].pov(self.board.turn).score(mate_score=10000)
-                adjusted_score = self.bias_scorer.get_bias_score(move, stockfish_score, self.board, is_black_turn=True)
+                adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, self.board)
                 scored_guesses.append((move, adjusted_score))
 
             # Sort moves by score

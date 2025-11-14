@@ -21,16 +21,16 @@ class ChessGUI:
         self.canvas.pack()
         # Track whose turn it is (True for white, False for black) and initialize update_suggest_button_state
         self.is_white_turn = True
-        # Create an instance of FoW_Engine1
-        self.engine = FoW_Engine1(self.board)
-        self.engine.start_engine()
-        # initialize GameOver
-        self.game_over = GameOver(self.root, self.board, self.engine)
         # makes instance of DrawBoard
         self.board_draw = DrawBoard(self.root, self.board, self.board_size, self.square_size, self.canvas)
         # Create an instance of InputProcessor and set a variable for bias
         self.processor = InputProcessor()  
         self.biases = self.processor.bias()
+        # Create an instance of FoW_Engine1
+        self.engine = FoW_Engine1(self.board)
+        self.engine.start_engine(self.biases)
+        # initialize GameOver
+        self.game_over = GameOver(self.root, self.board, self.engine)
         # make instance of PlayGame
         self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.board_draw, self.game_over, self.engine, self.biases)
         self.suggest_move_button = self.play_game.suggest_move_button
