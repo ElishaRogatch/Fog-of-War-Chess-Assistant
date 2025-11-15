@@ -7,6 +7,7 @@ from board_draw import DrawBoard
 from play_game import PlayGame
 from game_over import GameOver
 
+
 class ChessGUI:
     def __init__(self, root):
         self.root = root
@@ -26,9 +27,10 @@ class ChessGUI:
         # Create an instance of InputProcessor and set a variable for bias
         self.processor = InputProcessor()  
         self.biases = self.processor.bias()
+        # create instance of board state limiter and probable state analyzer
         # Create an instance of FoW_Engine1
-        self.engine = FoW_Engine1(self.board)
-        self.engine.start_engine(self.biases)
+        self.engine = FoW_Engine1(self.board, self.biases)
+        self.engine.start_engine()
         # initialize GameOver
         self.game_over = GameOver(self.root, self.board, self.engine)
         # make instance of PlayGame

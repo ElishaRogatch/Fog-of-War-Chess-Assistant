@@ -5,10 +5,11 @@ from bias_eval import BiasScorer
 from tkinter import messagebox
 
 class FoW_Engine1:
-    def __init__(self, board):
+    def __init__(self, board, bias):
         self.board = board
+        self.bias_scorer = BiasScorer(bias)
 
-    def start_engine(self, bias):
+    def start_engine(self):
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
         if system_name == "Windows":
@@ -17,17 +18,8 @@ class FoW_Engine1:
             SF_Path = "our path to stockfish MACOS"
         elif system_name == "Linux":
             SF_Path = "our path to stockfish Linux"
-        print(f"[DEBUG] Using Stockfish at: {SF_Path}")
-
+        print(f"[DEBUG] Using Fairy Stockfish at: {SF_Path}")
         self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
-        #self.bias = bias_dict
-        self.bias_scorer = BiasScorer(bias)
-        #print(f"[DEBUG] Bias config loaded: {self.bias}")
-
-        #print("Evaluating predictions")
-        #self.evaluate_moves() TEMP: Disable prediction for black, just predict with whole board visible
-        #print("board after prediction")
-        #print(self.board)
         
     def close_engine(self):
         try:
@@ -36,32 +28,60 @@ class FoW_Engine1:
         except chess.engine.EngineTerminatedError:
             print("Engine already terminated.")
 
-    def suggest_player_move(self, max_guesses=5):
+    def suggest_player_move(self, BSL, PSA, max_guesses=5):
         print("Suggesting best move options")
         try:
             if not hasattr(self, 'engine') or self.engine is None:
                 self.start_engine()
-
-            analysis = self.engine.analyse(self.board, chess.engine.Limit(depth=10), multipv=max_guesses)
-            if not isinstance(analysis, list):
-                analysis = [analysis]
-
+            
+            #for the best 5 boards from PSA evaluate them
+            # we need to use MBA on those
+            # for any duplicate moves keep only one with the mean score (compare using from_square and to_square)
+            # we need to find the top 5 overall based on score (maybe top 10? potential issue with move list length) 
+            # maybe give them the whole list? 
+            analyses = []
+            for i in PSA.board_scores[:5]:
+                if len(PSA.board_scores) >= 4:
+                    search_depth = 10
+                elif len(PSA.board_scores) >= 2:
+                    search_depth = 12
+                else: #length is 1
+                    search_depth = 15
+                analysis = self.engine.analyse(BSL.board_states[i[0]], chess.engine.Limit(depth=search_depth), multipv=max_guesses)
+                analyses.append(analysis)
+            
             scored_guesses = []
-            for entry in analysis:
-                move = entry["pv"][0]
-                stockfish_score = entry["score"].pov(self.board.turn).score(mate_score=10000)
-                if stockfish_score is None:
-                    stockfish_score = 0
-                adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, self.board)
-                print("Stockfish score: ", stockfish_score, "\nAdjusted Score: ", adjusted_score)
-                scored_guesses.append((move, adjusted_score))
-                #scored_guesses.append((move, stockfish_score))
-
+            for i, analysis in enumerate(analyses):
+                for entry in analysis:
+                    board = BSL.board_states[PSA.board_scores[i][0]]
+                    move = entry["pv"][0]
+                    stockfish_score = entry["score"].pov(board.turn).score(mate_score=10000)
+                    adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board)
+                    print(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
+                    scored_guesses.append((move, adjusted_score))
+                    #scored_guesses.append((move, stockfish_score))
+            
+            # remove duplicate moves from scored guesses
+            duplicate_indicies = []
+            combined_scored_guesses = []
+            for i in range(len(scored_guesses)):
+                if i in duplicate_indicies: continue
+                total_score = scored_guesses[i][1]
+                total_moves = 1
+                unique_move = scored_guesses[i][0]
+                for j in range(len(scored_guesses)):
+                    list_move = scored_guesses[j][0]
+                    if unique_move.from_square == list_move.from_square and unique_move.to_square == list_move.to_square:
+                        duplicate_indicies.append(j)
+                        total_score += scored_guesses[j][1]
+                        total_moves += 1
+                combined_scored_guesses.append((unique_move, round(total_score/ total_moves)))
+            
+            scored_guesses = combined_scored_guesses
             scored_guesses.sort(key=lambda x: x[1], reverse=True)
             print("Suggested Moves for White:")
             for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
                 print(f"{i + 1}. Move: {move}, Score: {score}")
-
             messagebox.showinfo("Top 5 Move Suggestions and Scores", scored_guesses)
             
         finally:
@@ -79,12 +99,7 @@ class FoW_Engine1:
 
             analysis = self.engine.analyse(board, chess.engine.Limit(depth=5))
             
-            if not isinstance(analysis, list):
-                analysis = [analysis]
-            
-            stockfish_score = analysis[0]["score"].pov(self.board.turn).score(mate_score=10000)
-            if stockfish_score is None:
-                stockfish_score = 0
+            stockfish_score = analysis[0]["score"].pov(board.turn).score(mate_score=10000)
             return stockfish_score
         
         finally:

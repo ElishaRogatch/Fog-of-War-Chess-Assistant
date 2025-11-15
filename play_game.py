@@ -17,14 +17,14 @@ class PlayGame:
         # Track dots for move indicators
         # Track selected square and moves
         self.selected_square = None
-        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move())
+        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA))
         self.engine = engine
+        self.BSL = BoardStateLimiter(self.board, [copy.deepcopy(self.board)])
+        self.PSA = ProbableStateAnalyzer(self.BSL, self.engine)
         self.turn_label = tk.Label(self.root, text="White's Turn", font=16)
         self.turn_label.pack()
         self.bias = bias
         self.captured_pieces = []
-        self.BSL = BoardStateLimiter(self.board, [copy.deepcopy(self.board)])
-        self.PSA = ProbableStateAnalyzer(self.BSL, self.engine)
 
     # updates the button state so its enbaled or not
     def update_suggest_button_state(self):
@@ -105,8 +105,8 @@ class PlayGame:
                 if self.board.turn: #black just moved # BSL CODE
                     self.BSL.pre_move_limiting()
                     print(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
-                    scores = self.PSA.analyze_states()
-                    print(f"Board scores \n{scores}")
+                    self.PSA.analyze_states()
+                    print(f"Board scores \n{self.PSA.board_scores}")
                 else: #white just moved
                     self.BSL.post_move_limiting()
                     print(f"Number of potential post-turn states {len(self.BSL.board_states)}")
