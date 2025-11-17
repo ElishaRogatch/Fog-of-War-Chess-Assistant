@@ -10,11 +10,13 @@ class InputProcessor:
         input_value = simpledialog.askstring("Input", "Hello, what would you like me to do:")
         if input_value:
             print("User input:", input_value)
+            if input_value.lower() == "no bias":
+                return None
             result = self.main(input_value)
             return result
         else:
             print("No input provided.")
-            return None
+            return {"piece" : None}
 
     def main(self, user_input): 
         #search user input for piece name substring 

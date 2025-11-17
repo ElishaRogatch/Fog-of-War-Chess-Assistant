@@ -20,6 +20,7 @@ class FoW_Engine1:
             SF_Path = "our path to stockfish Linux"
         print(f"[DEBUG] Using Fairy Stockfish at: {SF_Path}")
         self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+        self.engine.configure({"Threads": 12})# look into this
         
     def close_engine(self):
         try:
@@ -34,11 +35,7 @@ class FoW_Engine1:
             if not hasattr(self, 'engine') or self.engine is None:
                 self.start_engine()
             
-            #for the best 5 boards from PSA evaluate them
-            # we need to use MBA on those
-            # for any duplicate moves keep only one with the mean score (compare using from_square and to_square)
-            # we need to find the top 5 overall based on score (maybe top 10? potential issue with move list length) 
-            # maybe give them the whole list? 
+            #self.engine.protocol._ucinewgame() #use to clear engine hash tables and get consistent move output
             analyses = []
             for i in PSA.board_scores[:5]:
                 if len(PSA.board_scores) >= 4:
@@ -52,11 +49,13 @@ class FoW_Engine1:
             
             scored_guesses = []
             for i, analysis in enumerate(analyses):
+                board = BSL.board_states[PSA.board_scores[i][0]]
+                print(board) # to help understand suggestions while testing
+                vision_before_score = self.bias_scorer.get_before_vision_score(board)  #gets the vision state before to be used in determining the vision change
                 for entry in analysis:
-                    board = BSL.board_states[PSA.board_scores[i][0]]
                     move = entry["pv"][0]
                     stockfish_score = entry["score"].pov(board.turn).score(mate_score=10000)
-                    adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board)
+                    adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board, vision_before_score)
                     print(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
                     scored_guesses.append((move, adjusted_score))
                     #scored_guesses.append((move, stockfish_score))
@@ -82,7 +81,7 @@ class FoW_Engine1:
             print("Suggested Moves for White:")
             for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
                 print(f"{i + 1}. Move: {move}, Score: {score}")
-            messagebox.showinfo("Top 5 Move Suggestions and Scores", scored_guesses)
+            messagebox.showinfo("Top 5 Move Suggestions and Scores", scored_guesses[:5])
             
         finally:
             pass
@@ -99,66 +98,8 @@ class FoW_Engine1:
 
             analysis = self.engine.analyse(board, chess.engine.Limit(depth=5))
             
-            stockfish_score = analysis[0]["score"].pov(board.turn).score(mate_score=10000)
+            stockfish_score = analysis["score"].pov(not board.turn).score(mate_score=10000)
             return stockfish_score
         
         finally:
             pass
-
-    def evaluate_moves(self):# unused artifact
-        # Get top moves from Stockfish for black
-        try:
-            analysis = self.engine.analyse(self.board, chess.engine.Limit(depth=1), multipv=5)
-            if not isinstance(analysis, list):
-                analysis = [analysis]
-
-            # Score and sort moves
-            scored_guesses = []
-            for entry in analysis:
-                move = entry["pv"][0]
-                if self.move_enters_visible_area(move):
-                    continue  # Skip moves that land on visible squares,
-
-
-                stockfish_score = entry["score"].pov(self.board.turn).score(mate_score=10000)
-                adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, self.board)
-                scored_guesses.append((move, adjusted_score))
-
-            # Sort moves by score
-            scored_guesses.sort(key=lambda x: x[1], reverse=True)
-
-            # Take the best move
-            best_move, best_score = scored_guesses[0]
-
-            # Push the best move to the board
-            self.board.push(best_move)
-
-            # Store the move in the database
-            to_col = chr(chess.square_file(best_move.to_square) + ord('A'))
-            to_rw = chess.square_rank(best_move.to_square) + 1
-            moving_piece = self.board.piece_at(best_move.to_square)
-
-            self.cursor.execute("""
-                    INSERT OR REPLACE INTO FoW_chessboard (col, rw, color, piece, visW, prob)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (to_col, to_rw, 'B', moving_piece.symbol().lower(), 0, 0.5))
-
-            self.connection.commit()
-
-        except Exception as e:
-            print(f"Stockfish error: {e}")
-
-    def move_enters_visible_area(self, move):# unused artifact
-        # Check if the destination square of the move is currently visible to the player
-        col = chr(chess.square_file(move.to_square) + ord('A'))
-        rw = chess.square_rank(move.to_square) + 1
-
-        self.cursor.execute("""
-            SELECT visW FROM FoW_chessboard
-            WHERE col = ? AND rw = ?
-        """, (col, rw))
-        result = self.cursor.fetchone()
-
-        if result and result[0] == 1:
-            return True
-        return False
