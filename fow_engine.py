@@ -2,7 +2,7 @@ import chess
 import chess.engine
 import platform
 from bias_eval import BiasScorer
-from tkinter import messagebox
+import tkinter as tk
 
 class FoW_Engine1:
     def __init__(self, board, bias):
@@ -81,7 +81,8 @@ class FoW_Engine1:
             print("Suggested Moves for White:")
             for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
                 print(f"{i + 1}. Move: {move}, Score: {score}")
-            messagebox.showinfo("Top 5 Move Suggestions and Scores", scored_guesses[:5])
+            self.display_suggestion_box(scored_guesses)
+
             
         finally:
             pass
@@ -103,3 +104,12 @@ class FoW_Engine1:
         
         finally:
             pass
+        
+    def display_suggestion_box(self, scored_guesses):
+        suggestion_box = tk.Toplevel()
+        suggestion_box.title("Top 5 Move Suggestions and Scores")
+        suggestion_box.geometry("400x150")
+        suggestion_box.grab_set()
+        suggestion_box.iconbitmap("images/icons/Suggester.ico")
+        tk.Label(suggestion_box, text=scored_guesses[:5], wraplength=380).pack(pady=(10, 0))
+        tk.Button(suggestion_box, text="OK", command=suggestion_box.destroy).pack(pady=10,side= tk.BOTTOM)

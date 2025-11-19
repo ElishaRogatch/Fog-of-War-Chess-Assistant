@@ -41,8 +41,8 @@ class BiasScorer:
         if board.piece_at(move.to_square):
             vision_score += 10 #adds reward when move targets a piece to balance lost score for vision after
         
-        risk_score = self.get_risk_score(move, board) * 10 #subtracts 10 score for each angle of attack exposed to with the passed move
-
+        #risk_score = self.get_risk_score(move, board) * 10 #subtracts 10 score for each angle of attack exposed to with the passed move
+        risk_score = 0
         return stockfish_score + counter_move_score + vision_score - risk_score
     
     #TO FIX: all below functions use the actual board and not the prediction board currently
