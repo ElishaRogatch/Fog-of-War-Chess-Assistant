@@ -2,12 +2,14 @@ from tkinter import messagebox
 import chess
 
 class GameOver: 
-    def __init__(self, root, board):
+    def __init__(self, root, board, engine):
         self.root = root
         self.board = board
+        self.engine = engine
 
     def quit_game(self):
-
+        # close chess engine
+        self.engine.close_engine()
         # Close the GUI window
         self.root.quit()
         print("Game ended")
@@ -25,7 +27,7 @@ class GameOver:
                 messagebox.showinfo("50 Move Rule", "It's a draw!")
                 self.quit_game()
                 return True
-            elif game_outcome.termination == chess. Termination.THREEFOLD_REPETITION():
+            elif game_outcome.termination == chess.Termination.THREEFOLD_REPETITION:
                 messagebox.showinfo("Threefold Repetition", "It's a draw!")
                 self.quit_game()
                 return True

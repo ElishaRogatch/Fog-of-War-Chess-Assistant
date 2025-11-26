@@ -2,21 +2,21 @@ import chess
 import copy
 
 class BoardStateLimiter:
-    def __init__(self, board, old_board_states):
+    def __init__(self, board, board_states):
         self.board = board
-        self.old_board_states = old_board_states
-        self.new_board_states = []
+        self.board_states = board_states
     
     def post_move_limiting(self):
         # make the known move for all potential states
-        for boardstate in self.old_board_states:
+        for boardstate in self.board_states:
             boardstate.push(self.board.peek())
         self.board.push(chess.Move.null()) # temporary move for the otherside so the legal move generator can see from correct pov
-        self.old_board_states[:] = self._remove_contradicting_states(self.old_board_states)
+        self.board_states[:] = self._remove_contradicting_states(self.board_states)
         self.board.pop() # undo temp move
     
     def pre_move_limiting(self):
-        for boardstate in self.old_board_states:
+        new_board_states = []
+        for boardstate in self.board_states:
             for move in boardstate.fow_legal_moves:
                 new_boardstate = copy.copy(boardstate)
                 new_boardstate.push(move)
@@ -25,13 +25,12 @@ class BoardStateLimiter:
                     continue
                 # check to make sure new state isnt a duplicate
                 new_boardstate.stored_transposition_key = new_boardstate._transposition_key()
-                if not self._is_duplicate_state(new_boardstate, self.new_board_states):
-                    self.new_board_states.append(new_boardstate)
+                if not self._is_duplicate_state(new_boardstate, new_board_states):
+                    new_board_states.append(new_boardstate)
         # in new states generation check for captures by checking piece mask of the side about to move
-        self.new_board_states[:] = self._remove_contradicting_states(self.new_board_states)
+        new_board_states[:] = self._remove_contradicting_states(new_board_states)
         # make new states the old states (for next move)
-        self.old_board_states = self.new_board_states
-        self.new_board_states = []
+        self.board_states = new_board_states
     
     def _does_match_visibility(self, board1, board2, visible, semi_visible):
         if ~board1.occupied & (visible | semi_visible) != ~board2.occupied & (visible | semi_visible): # empty squares don't match
