@@ -36,7 +36,8 @@ class BiasScorer:
         piece_to_counter = self.bias.get("piece", "") #the piece derived from the bias given
         counter_move_score = self.get_counter_move_score(move, board, piece_to_counter) * 50 #adds 50 score when the move targets the bias piece
         
-        vision_score = self.get_vision_score(move, board, vision_before_score) #tends to return a negative score especially when the suggested move captures a piece
+        vison_weight = 5
+        vision_score =  vison_weight * self.get_vision_score(move, board, vision_before_score) #tends to return a negative score especially when the suggested move captures a piece
         
         if board.piece_at(move.to_square):
             vision_score += 10 #adds reward when move targets a piece to balance lost score for vision after

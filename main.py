@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import messagebox
 import fow_chess
 from fow_engine import FoW_Engine1
 from input_processor import InputProcessor
@@ -13,7 +12,7 @@ class ChessGUI:
         self.root = root
         # initializes board
         self.board = fow_chess.FowBoard()
-        self.root.title("Two-Player Chess Game")
+        self.root.title("Two-Player Fog Of War Chess Game")
         # Chess board size
         self.board_size = 8
         self.square_size = 64  # Size of each square in pixels
@@ -67,7 +66,7 @@ class ChessGUI:
     def print_captured_pieces(self):
         """Print the captured pieces for both players."""
         captured_box = tk.Toplevel()
-        captured_box.title("Captured Peices")
+        captured_box.title("Captured Pieces")
         captured_box.geometry("300x150")
         captured_box.grab_set()
         captured_box.iconbitmap("images/icons/Captured.ico")

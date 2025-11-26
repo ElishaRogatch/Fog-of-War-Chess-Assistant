@@ -27,7 +27,7 @@ class GameOver:
                 messagebox.showinfo("50 Move Rule", "It's a draw!")
                 self.quit_game()
                 return True
-            elif game_outcome.termination == chess. Termination.THREEFOLD_REPETITION():
+            elif game_outcome.termination == chess.Termination.THREEFOLD_REPETITION:
                 messagebox.showinfo("Threefold Repetition", "It's a draw!")
                 self.quit_game()
                 return True
