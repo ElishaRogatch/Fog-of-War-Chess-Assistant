@@ -14,4 +14,4 @@ class ProbableStateAnalyzer:
             board = self.BSL.board_states[i]
             score = self.engine.board_state_analysis(board) #potentially use multiple engines
             self.board_scores.append((i, score))
-        self.board_scores.sort(key=lambda x: x[1], reverse=True)        
+        self.board_scores.sort(key=lambda x: x[1], reverse=True) # Sort by score descending       

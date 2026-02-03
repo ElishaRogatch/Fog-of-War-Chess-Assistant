@@ -7,14 +7,17 @@ class BoardStateLimiter:
         self.board_states = board_states
     
     def post_move_limiting(self):
+        """Update the possible boardstates to reflect the assisted player's move and remove contradicting boardstates"""
         # make the known move for all potential states
         for boardstate in self.board_states:
             boardstate.push(self.board.peek())
         self.board.push(chess.Move.null()) # temporary move for the otherside so the legal move generator can see from correct pov
         self.board_states[:] = self._remove_contradicting_states(self.board_states)
         self.board.pop() # undo temp move
-    
+        
     def pre_move_limiting(self):
+        """For each boardstate find all possible legal moves and create a new state for each possible move being made and 
+        remove contradincting and duplicate boardstates."""
         new_board_states = []
         for boardstate in self.board_states:
             for move in boardstate.fow_legal_moves:
@@ -49,7 +52,7 @@ class BoardStateLimiter:
             return False
         else:
             return True
-        
+     
     def _remove_contradicting_states(self, boardstates):
         visible = self.board.get_fow_visibility()
         visible = visible | self.board.get_ep_visibility(visible)

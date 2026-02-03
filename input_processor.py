@@ -5,10 +5,11 @@ from tkinter.simpledialog import _QueryDialog
 
 class InputProcessor:
     def bias(self):
-        #root = tk.Tk()
-        #root.withdraw()
+        """Process user input to identify bias type."""
+        #ask user for type of bias
         bias_dialog = _QueryString("Input", "Hello, what would you like me to do:")
-        input_value = bias_dialog.result 
+        input_value = bias_dialog.result
+        #process user input, based on whether input is no bias or a piece name
         if input_value:
             print("User input:", input_value)
             if input_value.lower() == "no bias":
@@ -20,6 +21,7 @@ class InputProcessor:
             return {"piece" : None}
 
     def main(self, user_input): 
+        #TODO change bias to allow for openings as well as pieces
         #search user input for piece name substring 
         pieces = ["knight", "bishop", "rook", "queen", "king"]
         matches = [p for p in pieces if p in user_input.lower()]
