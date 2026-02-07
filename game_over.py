@@ -8,8 +8,9 @@ class GameOver:
         self.engine = engine
 
     def quit_game(self):
-        # close chess engine
+        # Close chess engine
         self.engine.close_engine()
+        
         # Close the GUI window
         self.root.quit()
         print("Game ended")
@@ -17,7 +18,7 @@ class GameOver:
     def check_game_over(self):
         """Check if the game is over."""
         game_outcome = self.board.outcome()
-        if game_outcome is not None:
+        if game_outcome is not None: # Check all game over conditions
             if game_outcome.termination == chess.Termination.VARIANT_LOSS:
                 winner = "White" if game_outcome.winner else "Black"
                 messagebox.showinfo("King Captured", f"{winner} wins!")

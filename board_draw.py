@@ -4,20 +4,25 @@ import tkinter as tk
 
 class DrawBoard:
     def __init__(self, root, board, board_size, square_size, canvas):
+        """Initialize board drawing elements"""
         self.root = root
+
         # Chess board size
         self.board_size = board_size
         self.square_size = square_size
         self.board = board
+
         # Create Canvas to draw chessboard
         self.canvas = canvas
+
         # Load piece images
         self.piece_images = self.load_piece_images()
+
         # Track dots for move indicators
         self.move_dots = []
 
     def load_piece_images(self):
-        """Load piece images from files (you can use any chess piece images here)."""
+        """Load piece images from files (you can use any chess piece images here by replacing the .png files in the 'pieces' folder)."""
         pieces = ["wp", "wr", "wn", "wb", "wq", "wk", "wu", "bp", "br", "bn", "bb", "bq", "bk", "bu", "x"]
         piece_images = {}
         for piece in pieces:
@@ -61,6 +66,7 @@ class DrawBoard:
         """Place pieces on the board according to the current board state."""
         # Clear all existing pieces from the board
         self.canvas.delete("piece")
+
         # Place pieces on the board
         for row in range(8):
             for col in range(8):
@@ -80,11 +86,16 @@ class DrawBoard:
         
         # Define the fog color (you can use a semi-transparent color or adjust opacity)
         fog_color = "#808080"
+
+        '''
+        # !!! Deprecated fog color code options from last year's team 
         #if self.board.turn: #If white turn
         #    fog_color = "red"  # Light red with transparency (note: Tkinter doesn't support RGBA natively, so use a solid color or check transparency options for your canvas)
         #else:
         #    fog_color = "purple"  # You can adjust the color as needed
-        
+        '''
+
+        # Get visibility bitboard and draw fog on non-visible squares
         visibility: Bitboard = self.board.get_fow_visibility()
         for square in SQUARES:
             if not BB_SQUARES[square] & visibility: #If the square is not visible
@@ -122,7 +133,7 @@ class DrawBoard:
                 y = row * self.square_size + self.square_size // 5
                 self.canvas.create_text(x, y, text=number, font=("Comic Sans MS", 7), fill="white", anchor="e", tags="fog")
         
-        # show implied pieces
+        # Show implied pieces (pieces with location known but not visible under fog)
         for square in chess.scan_reversed(self.board.get_semi_visibility(visibility)):
             col = square % 8
             row = (square-col) / 8
@@ -134,7 +145,8 @@ class DrawBoard:
                 x = col * self.square_size
                 y = (7 - row) * self.square_size  
                 self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, image=image, tags="fog")
-        # ep pieces
+
+        # Ep pieces (En-Passant target pieces)
         for square in chess.scan_reversed(self.board.get_ep_visibility(visibility)): 
             col = square % 8
             row = (square-col) / 8 
