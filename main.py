@@ -34,9 +34,6 @@ class ChessGUI:
         self.processor = InputProcessor()  
         self.biases = self.processor.bias()
 
-        # I THINK THIS WAS MOVED TO MAIN (-Mlynek): 
-        #   Create instance of board state limiter and probable state analyzer
-
         # Create an instance of FoW_Engine1
         self.engine = FoW_Engine1(self.board, self.biases)
         self.engine.start_engine()
@@ -64,7 +61,7 @@ class ChessGUI:
         # Bind click events to the board
         self.canvas.bind("<Button-1>", self.play_game.on_square_click)
 
-        # Creates a button that prints the board state **debug feature**
+        # Creates a button that prints the board state **DEBUG feature old**
         # print_button = tk.Button(self.root, text="Print Board State", command=self.print_board_state)
         # print_button.pack(side=tk.LEFT)
 
@@ -75,7 +72,7 @@ class ChessGUI:
         # Makes it so that X-ing out of the application leaves the game
         self.root.protocol("WM_DELETE_WINDOW", self.game_over.quit_game)
 
-        # Create a button to print the moves made in the game **debug feature**
+        # Create a button to print the moves made in the game **DEBUG feature old**
         # self.move_list = []
         # print_moves_button = tk.Button(self.root, text="Print Move History", command=self.database.print_moves)
         # print_moves_button.pack(side=tk.LEFT)

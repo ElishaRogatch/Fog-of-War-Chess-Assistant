@@ -1,7 +1,6 @@
 import chess
 from chess import SQUARES, Bitboard, BB_SQUARES
 
-########BIAS EVALUATIONS NEEDS WORK
 class BiasScorer:
     def __init__(self, bias):
         self.bias = bias  # The bias dictionary passed from the engine
@@ -15,17 +14,7 @@ class BiasScorer:
             }
 
     def move_bias_applicator(self, move, stockfish_score, board, vision_before_score):
-        """ ***do we keep this comment or shorten it?
-        Adjusts the score of a move based on bias_dict for both White and Black.
-
-        Parameters:
-            move (chess.Move): The move being evaluated.
-            stockfish_score (int): The base score provided by Stockfish.
-            board (chess.Board): The board state to analyze the move.
-
-        Returns:
-            int: The adjusted score considering the bias.
-        """
+        """Adjusts the stockfish score of a move based on certain biasing parameters."""
         if not self.bias:
             return stockfish_score  # No bias provided, return the Stockfish score as-is
 
@@ -43,7 +32,6 @@ class BiasScorer:
         risk_score = 0
         return stockfish_score + counter_move_score + vision_score - risk_score # Adjusted score
     
-    # !!! TO FIX: all below functions use the actual board and not the prediction board currently 
     def get_counter_move_score(self, move, board, piece_to_counter):
         """Returns True if target location contains the bias piece."""
         target_piece_type = board.piece_type_at(move.to_square)
@@ -52,8 +40,7 @@ class BiasScorer:
             return target_piece_name == piece_to_counter  #if target is piece to counter
         return False
 
-    # !!! This still gets run each time that move bias applicator is called. (Only needs to run once)
-    def get_before_vision_score(self, board): # ***Suggested fix: store the value in-script when first called and have if statement to check if it exists before calculating again. (-Mlynek)
+    def get_before_vision_score(self, board): 
         """Analyze vision state of board before move."""
 
         # Initialize variables for calculation

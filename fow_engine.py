@@ -60,7 +60,7 @@ class FoW_Engine1:
                     adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board, vision_before_score)
                     print(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
                     scored_guesses.append((move, adjusted_score))
-                    #scored_guesses.append((move, stockfish_score)) # Use this line to see only stockfish scores without bias adjustments
+                    #scored_guesses.append((move, stockfish_score)) # DEBUG: Use this line to see only stockfish scores without bias adjustments
             
             # Remove duplicate moves from scored guesses
             duplicate_indicies = []
@@ -89,7 +89,8 @@ class FoW_Engine1:
             
         finally:
             pass
-            #try:
+            # DEBUG: Figure this out ↓
+            #try:  
             #    if self.engine:
             #        self.engine.quit()
             #except chess.engine.EngineTerminatedError:

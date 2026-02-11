@@ -4,7 +4,6 @@ import tkinter as tk
 
 class DrawBoard:
     def __init__(self, root, board, board_size, square_size, canvas):
-        """Initialize board drawing elements"""
         self.root = root
 
         # Chess board size
@@ -86,14 +85,6 @@ class DrawBoard:
         
         # Define the fog color (you can use a semi-transparent color or adjust opacity)
         fog_color = "#808080"
-
-        '''
-        # !!! Deprecated fog color code options from last year's team 
-        #if self.board.turn: #If white turn
-        #    fog_color = "red"  # Light red with transparency (note: Tkinter doesn't support RGBA natively, so use a solid color or check transparency options for your canvas)
-        #else:
-        #    fog_color = "purple"  # You can adjust the color as needed
-        '''
 
         # Get visibility bitboard and draw fog on non-visible squares
         visibility: Bitboard = self.board.get_fow_visibility()

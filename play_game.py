@@ -8,33 +8,39 @@ class PlayGame:
     def __init__(self, root, board, canvas, square_size, assisted_player, board_draw, game_over, engine, bias):
         """Initialize game state and GUI elements."""
         self.root = root
-
-        # Chess board size
         self.board = board
-
-        # Create Canvas to draw chessboard
         self.canvas = canvas
         self.square_size = square_size
         self.assisted_player = assisted_player
         self.board_draw = board_draw
         self.game_over = game_over
+        self.engine = engine
+        self.bias = bias
 
         # Track selected square and moves
         self.selected_square = None
-        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA))
-        self.transition_sides_button = tk.Button(self.root, text="Player Transition Toggle", command= lambda: self.update_transition_sides_state())
-        self.engine = engine
+        
+        # Create instance of board state limiter and probable state analyzer
         self.BSL = BoardStateLimiter(self.board, [copy.deepcopy(self.board)])
         self.PSA = ProbableStateAnalyzer(self.BSL, self.engine, bias)
+        
+        # Initialized buttons
+        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA))
+        self.transition_sides_button = tk.Button(self.root, text="Player Transition Toggle", command= lambda: self.update_transition_sides_state())
+        
+        # Player label
         self.turn_label = tk.Label(self.root, text="White's Turn", font=16)
         self.turn_label.pack()
-        self.bias = bias
+        
+        # List of captured pieces
         self.captured_pieces = []
+        
+        # Ensure proper player transitions
         self.transition_sides = tk.BooleanVar(root, value=False)
         self.wait_lock = tk.BooleanVar(root, value=False)
 
     def update_suggest_button_state(self):
-        """Updates the button state so its enbaled or not based on whose turn it is."""
+        """Updates the button state so its enabled or not based on whose turn it is."""
         if self.assisted_player == self.board.turn:
             self.suggest_move_button.config(state=tk.NORMAL)
         else:
