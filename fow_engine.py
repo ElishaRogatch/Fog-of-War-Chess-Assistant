@@ -20,9 +20,10 @@ class FoW_Engine1:
             SF_Path = "our path to stockfish Linux"
         print(f"[DEBUG] Using Fairy Stockfish at: {SF_Path}")
         self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
-        self.engine.configure({"Threads": 12})# look into this
+        #self.engine.configure({"Threads": 12})# look into this
         
     def close_engine(self):
+        """Terminate the FOW chess engine process."""
         try:
             if self.engine:
                 self.engine.quit()
@@ -30,19 +31,20 @@ class FoW_Engine1:
             print("Engine already terminated.")
 
     def suggest_player_move(self, BSL, PSA, max_guesses=5):
+        """Analyze the current board state and suggest the best moves for the assisted player."""
         print("Suggesting best move options")
         try:
             if not hasattr(self, 'engine') or self.engine is None:
                 self.start_engine()
             
-            #self.engine.protocol._ucinewgame() #use to clear engine hash tables and get consistent move output
+            #self.engine.protocol._ucinewgame() # Use to clear engine hash tables and get consistent move output
             analyses = []
             for i in PSA.board_scores[:5]:
                 if len(PSA.board_scores) >= 4:
                     search_depth = 10
                 elif len(PSA.board_scores) >= 2:
                     search_depth = 12
-                else: #length is 1
+                else: # Length is 1
                     search_depth = 15
                 analysis = self.engine.analyse(BSL.board_states[i[0]], chess.engine.Limit(depth=search_depth), multipv=max_guesses)
                 analyses.append(analysis)
@@ -50,17 +52,17 @@ class FoW_Engine1:
             scored_guesses = []
             for i, analysis in enumerate(analyses):
                 board = BSL.board_states[PSA.board_scores[i][0]]
-                print(board) # to help understand suggestions while testing
-                vision_before_score = self.bias_scorer.get_before_vision_score(board)  #gets the vision state before to be used in determining the vision change
+                print(board) # To help understand suggestions while testing
+                vision_before_score = self.bias_scorer.get_before_vision_score(board)  # Gets the vision state before to be used in determining the vision change
                 for entry in analysis:
                     move = entry["pv"][0]
                     stockfish_score = entry["score"].pov(board.turn).score(mate_score=10000)
                     adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board, vision_before_score)
                     print(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
                     scored_guesses.append((move, adjusted_score))
-                    #scored_guesses.append((move, stockfish_score))
+                    #scored_guesses.append((move, stockfish_score)) # DEBUG: Use this line to see only stockfish scores without bias adjustments
             
-            # remove duplicate moves from scored guesses
+            # Remove duplicate moves from scored guesses
             duplicate_indicies = []
             combined_scored_guesses = []
             for i in range(len(scored_guesses)):
@@ -76,6 +78,7 @@ class FoW_Engine1:
                         total_moves += 1
                 combined_scored_guesses.append((unique_move, round(total_score/ total_moves)))
             
+            # Sort and display the top moves
             scored_guesses = combined_scored_guesses
             scored_guesses.sort(key=lambda x: x[1], reverse=True)
             print("Suggested Moves for White:")
@@ -86,13 +89,15 @@ class FoW_Engine1:
             
         finally:
             pass
-            #try:
+            # DEBUG: Figure this out ↓
+            #try:  
             #    if self.engine:
             #        self.engine.quit()
             #except chess.engine.EngineTerminatedError:
             #    print("Engine already terminated.")
             
     def board_state_analysis(self, board):
+        """Analyze the board state and return Stockfish score."""
         try:
             if not hasattr(self, 'engine') or self.engine is None:
                 self.start_engine()
@@ -106,6 +111,7 @@ class FoW_Engine1:
             pass
         
     def display_suggestion_box(self, scored_guesses):
+        """Display a popup with the top move suggestions and their scores."""
         suggestion_box = tk.Toplevel()
         suggestion_box.title("Top 5 Move Suggestions and Scores")
         suggestion_box.geometry("400x150")

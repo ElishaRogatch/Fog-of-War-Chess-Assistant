@@ -280,9 +280,13 @@ class FowBoard(Board):
         single_moves = BB_EMPTY
         double_moves = BB_EMPTY
         pawns = self.pieces_mask(PAWN, self.turn)
+        
+        # finds the squares you would see if you were able to attack, thus implying that they are safe
         for from_square in scan_reversed(pawns):
-            attack_moves = attack_moves | BB_PAWN_ATTACKS[self.turn][from_square]
+            attack_moves = attack_moves | BB_PAWN_ATTACKS[self.turn][from_square] 
         attack_moves = attack_moves & ~visible
+        
+        # find the squares you would see if you were able to move there, thus implying that they have a piece there
         if self.turn == WHITE:
             single_moves = pawns << 8
             double_moves = (pawns << 16) & BB_RANK_4
@@ -290,7 +294,8 @@ class FowBoard(Board):
             single_moves = pawns >> 8
             double_moves = (pawns >> 16) & BB_RANK_5
         single_moves = single_moves & ~visible
-        double_moves = double_moves & ~visible 
+        double_moves = double_moves & ~visible
+        # only include a double move if the single move is empty
         if self.turn == WHITE:
             double_moves = double_moves & ~(single_moves << 8) & ~(self.occupied << 8)
         else:
