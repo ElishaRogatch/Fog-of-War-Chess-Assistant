@@ -38,6 +38,7 @@ class PlayGame:
         # Ensure proper player transitions
         self.transition_sides = tk.BooleanVar(root, value=False)
         self.wait_lock = tk.BooleanVar(root, value=False)
+        self.game_over.assign_wait_lock(self.wait_lock)
 
     def update_suggest_button_state(self):
         """Updates the button state so its enabled or not based on whose turn it is."""
@@ -124,6 +125,9 @@ class PlayGame:
                     print(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
                     self.PSA.analyze_states()
                     print(f"Board scores \n{self.PSA.board_scores}")
+                    #for i in self.PSA.board_scores: #DEBUG PSA board print
+                    #    print(f"board number {i[0]} score is {i[1]}")#DEBUG PSA board print
+                    #    print(self.BSL.board_states[i[0]])#DEBUG PSA board print
                 else: # Assisted player just moved
                     self.BSL.post_move_limiting()
                     print(f"Number of potential post-turn states {len(self.BSL.board_states)}")

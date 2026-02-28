@@ -31,15 +31,15 @@ class ChessGUI:
         self.board_draw = DrawBoard(self.root, self.board, self.board_size, self.square_size, self.canvas)
 
         # Create an instance of InputProcessor and set a variable for bias
-        self.processor = InputProcessor()  
+        self.processor = InputProcessor(self.root)  
         self.biases = self.processor.bias()
 
-        # Create an instance of FoW_Engine1
-        self.engine = FoW_Engine1(self.board, self.biases)
-        self.engine.start_engine()
-
         # Initialize GameOver
-        self.game_over = GameOver(self.root, self.board, self.engine)
+        self.game_over = GameOver(self.root, self.board)
+
+        # Create an instance of FoW_Engine1
+        self.engine = FoW_Engine1(self.board, self.biases, self.game_over)
+        self.game_over.assign_engine(self.engine)
 
         # Make instance of PlayGame
         self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.assisted_player, self.board_draw, self.game_over, self.engine, self.biases)
@@ -79,6 +79,9 @@ class ChessGUI:
 
         # Draw the inital fog
         self.board_draw.draw_fog()
+        
+        # Start the chess engine
+        self.engine.start_engine()
     
     def print_captured_pieces(self):
         """Print the captured pieces for both players."""

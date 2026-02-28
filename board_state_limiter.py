@@ -28,8 +28,12 @@ class BoardStateLimiter:
                     continue
                 # check to make sure new state isnt a duplicate
                 new_boardstate.stored_transposition_key = new_boardstate._transposition_key()
-                if not self._is_duplicate_state(new_boardstate, new_board_states):
+                new_boardstate.last_piece_moved = [new_boardstate.piece_type_at(new_boardstate.peek().to_square)]
+                is_duplicate, duplicate_state = self._is_duplicate_state(new_boardstate, new_board_states)
+                if not is_duplicate:
                     new_board_states.append(new_boardstate)
+                else:
+                    duplicate_state.last_piece_moved.append(new_boardstate.last_piece_moved[0])
         # in new states generation check for captures by checking piece mask of the side about to move
         new_board_states[:] = self._remove_contradicting_states(new_board_states)
         # make new states the old states (for next move)
@@ -64,5 +68,5 @@ class BoardStateLimiter:
         for unique_boardstate in boardstates:
             # use transposition key rather than just '==' to limit the states by not concerning over differences in the half-move count between states
             if boardstate.stored_transposition_key == unique_boardstate.stored_transposition_key:
-                return True
-        return False
+                return True, unique_boardstate
+        return False, None

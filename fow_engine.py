@@ -3,23 +3,43 @@ import chess.engine
 import platform
 from bias_eval import BiasScorer
 import tkinter as tk
+from tkinter import filedialog
+import os
+from pathlib import Path
 
 class FoW_Engine1:
-    def __init__(self, board, bias):
+    def __init__(self, board, bias, game_over):
         self.board = board
         self.bias_scorer = BiasScorer(bias)
+        self.game_over = game_over
 
     def start_engine(self):
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
+        SF_Path = "not_fairy_stockfish.exe"
         if system_name == "Windows":
-            SF_Path = "fairy-stockfish_x86-64-bmi2.exe"
+            search_location = Path('.')
+            for search_path in search_location.iterdir():
+                if search_path.is_file():
+                    if search_path.name[:15] == "fairy-stockfish" and search_path.name[-4:] == ".exe":
+                        SF_Path = search_path
+            #SF_Path = "fairy-stockfish_x86-64-bmi2.exe"
         elif system_name == "Darwin":  #MacOS
             SF_Path = "our path to stockfish MACOS"
         elif system_name == "Linux":
             SF_Path = "our path to stockfish Linux"
-        print(f"[DEBUG] Using Fairy Stockfish at: {SF_Path}")
-        self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+        try:   
+            self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+        except FileNotFoundError:
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            SF_Path = filedialog.askopenfilename(title= "Choose Fairy-Stockfish engine file", initialdir= cur_dir, filetypes= [("Executable", "*.exe")])
+            try:
+                self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+            except:
+                self.engine = False
+                print("No suitable fairy stockfish engine was found.")
+                self.game_over.quit_game()
+                
         #self.engine.configure({"Threads": 12})# look into this
         
     def close_engine(self):
@@ -118,4 +138,4 @@ class FoW_Engine1:
         suggestion_box.grab_set()
         suggestion_box.iconbitmap("images/icons/Suggester.ico")
         tk.Label(suggestion_box, text=scored_guesses[:5], wraplength=380).pack(pady=(10, 0))
-        tk.Button(suggestion_box, text="OK", command=suggestion_box.destroy).pack(pady=10,side= tk.BOTTOM)
+        tk.Button(suggestion_box, text="Ok", command=suggestion_box.destroy).pack(pady=10,side= tk.BOTTOM)

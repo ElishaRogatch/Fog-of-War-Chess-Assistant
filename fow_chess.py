@@ -40,6 +40,7 @@ class FowBoard(Board):
     def __init__(self,*args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.stored_transposition_key = None
+        self.last_piece_moved = None
         
     @property
     def fow_legal_moves(self) -> LegalFowMoveGenerator:
