@@ -18,10 +18,10 @@ class GameOver:
         self.engine.close_engine()
         
         # Make sure the player transition is completed
-        self.wait_lock.set(True)
+        self.wait_lock.set(2) # Quit
         
         # Close the GUI window
-        self.root.quit()
+        self.root.destroy()
         print("Game ended")
 
     def check_game_over(self):

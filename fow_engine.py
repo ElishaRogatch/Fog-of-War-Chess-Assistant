@@ -8,9 +8,10 @@ import os
 from pathlib import Path
 
 class FoW_Engine1:
-    def __init__(self, board, bias, game_over):
+    def __init__(self, root, board, biases, game_over):
+        self.root = root
         self.board = board
-        self.bias_scorer = BiasScorer(bias)
+        self.bias_scorer = BiasScorer(biases)
         self.game_over = game_over
 
     def start_engine(self):
@@ -30,13 +31,15 @@ class FoW_Engine1:
             SF_Path = "our path to stockfish Linux"
         try:   
             self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
-        except FileNotFoundError:
+        except:
+            print(f"Fairy stockfish engine at \"{SF_Path}\" failed to properly open")
             cur_dir = os.path.dirname(os.path.abspath(__file__))
             SF_Path = filedialog.askopenfilename(title= "Choose Fairy-Stockfish engine file", initialdir= cur_dir, filetypes= [("Executable", "*.exe")])
             try:
                 self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
             except:
                 self.engine = False
+                print(f"Fairy stockfish engine at \"{SF_Path}\" failed to properly open")
                 print("No suitable fairy stockfish engine was found.")
                 self.game_over.quit_game()
                 
@@ -104,7 +107,7 @@ class FoW_Engine1:
             print("Suggested Moves for White:")
             for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
                 print(f"{i + 1}. Move: {move}, Score: {score}")
-            self.display_suggestion_box(scored_guesses)
+            SuggestionOutput(self.root, scored_guesses)
 
             
         finally:
@@ -130,12 +133,31 @@ class FoW_Engine1:
         finally:
             pass
         
-    def display_suggestion_box(self, scored_guesses):
-        """Display a popup with the top move suggestions and their scores."""
-        suggestion_box = tk.Toplevel()
-        suggestion_box.title("Top 5 Move Suggestions and Scores")
-        suggestion_box.geometry("400x150")
-        suggestion_box.grab_set()
-        suggestion_box.iconbitmap("images/icons/Suggester.ico")
-        tk.Label(suggestion_box, text=scored_guesses[:5], wraplength=380).pack(pady=(10, 0))
-        tk.Button(suggestion_box, text="Ok", command=suggestion_box.destroy).pack(pady=10,side= tk.BOTTOM)
+
+        
+class SuggestionOutput(tk.Toplevel):
+    """Display a popup with the top move suggestions and their scores."""
+    def __init__(self, parent, scored_guesses):
+        super().__init__(parent)
+        self.parent = parent
+        self.iconbitmap("images/icons/Suggester.ico")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.minsize(0, 100)
+        self.title("Top 5 Move Suggestions and Scores")
+        
+    # Makes this popup window behave like a dependent child of the parent
+        self.transient(parent)
+        # Grabs the focus and puts it onto this child window
+        self.grab_set()
+
+        tk.Label(self, text=scored_guesses[:5], wraplength=380).pack(padx=10, pady=5)
+
+        # OK button
+        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM,padx=10, pady=5)
+
+
+    def ok(self):
+        self.close()
+       
+    def close(self):
+        self.destroy()
