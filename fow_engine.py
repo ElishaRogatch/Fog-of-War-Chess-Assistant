@@ -3,23 +3,48 @@ import chess.engine
 import platform
 from bias_eval import BiasScorer
 import tkinter as tk
+from tkinter import filedialog
+import os
+from pathlib import Path
+
 
 class FoW_Engine1:
-    def __init__(self, board, bias):
+    def __init__(self, root, board, biases, game_over, logger):
+        self.root = root
         self.board = board
-        self.bias_scorer = BiasScorer(bias)
+        self.bias_scorer = BiasScorer(biases)
+        self.game_over = game_over
+        self.logger = logger
 
     def start_engine(self):
         """Run the FOW engine to generate a move"""
         system_name = platform.system()
+        SF_Path = "not_fairy_stockfish.exe"
         if system_name == "Windows":
-            SF_Path = "fairy-stockfish_x86-64-bmi2.exe"
+            search_location = Path('.')
+            for search_path in search_location.iterdir():
+                if search_path.is_file():
+                    if search_path.name[:15] == "fairy-stockfish" and search_path.name[-4:] == ".exe":
+                        SF_Path = search_path
+            #SF_Path = "fairy-stockfish_x86-64-bmi2.exe"
         elif system_name == "Darwin":  #MacOS
             SF_Path = "our path to stockfish MACOS"
         elif system_name == "Linux":
             SF_Path = "our path to stockfish Linux"
-        print(f"[DEBUG] Using Fairy Stockfish at: {SF_Path}")
-        self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+        try:   
+            self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+        except:
+            print(f"Fairy stockfish engine at \"{SF_Path}\" failed to properly open")
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            SF_Path = filedialog.askopenfilename(title= "Choose Fairy-Stockfish engine file", initialdir= cur_dir, filetypes= [("Executable", "*.exe")])
+            try:
+                self.engine = chess.engine.SimpleEngine.popen_uci([SF_Path, "load", "variants.ini"])
+            except:
+                self.engine = False
+                print(f"Fairy stockfish engine at \"{SF_Path}\" failed to properly open")
+                self.logger.log("No suitable fairy stockfish engine was found.")
+                self.game_over.quit_game()
+                
         #self.engine.configure({"Threads": 12})# look into this
         
     def close_engine(self):
@@ -32,7 +57,7 @@ class FoW_Engine1:
 
     def suggest_player_move(self, BSL, PSA, max_guesses=5):
         """Analyze the current board state and suggest the best moves for the assisted player."""
-        print("Suggesting best move options")
+        self.logger.log("Best moves from PSA boards")
         try:
             if not hasattr(self, 'engine') or self.engine is None:
                 self.start_engine()
@@ -52,13 +77,13 @@ class FoW_Engine1:
             scored_guesses = []
             for i, analysis in enumerate(analyses):
                 board = BSL.board_states[PSA.board_scores[i][0]]
-                print(board) # To help understand suggestions while testing
+                self.logger.log(board) # To help understand suggestions while testing DEBUG??? or not?
                 vision_before_score = self.bias_scorer.get_before_vision_score(board)  # Gets the vision state before to be used in determining the vision change
                 for entry in analysis:
                     move = entry["pv"][0]
                     stockfish_score = entry["score"].pov(board.turn).score(mate_score=10000)
                     adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board, vision_before_score)
-                    print(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
+                    self.logger.log(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
                     scored_guesses.append((move, adjusted_score))
                     #scored_guesses.append((move, stockfish_score)) # DEBUG: Use this line to see only stockfish scores without bias adjustments
             
@@ -81,10 +106,10 @@ class FoW_Engine1:
             # Sort and display the top moves
             scored_guesses = combined_scored_guesses
             scored_guesses.sort(key=lambda x: x[1], reverse=True)
-            print("Suggested Moves for White:")
+            self.logger.log("Suggested Moves for White:")
             for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
-                print(f"{i + 1}. Move: {move}, Score: {score}")
-            self.display_suggestion_box(scored_guesses)
+                self.logger.log(f"{i + 1}. Move: {move}, Score: {score}")
+            SuggestionOutput(self.root, scored_guesses)
 
             
         finally:
@@ -110,12 +135,31 @@ class FoW_Engine1:
         finally:
             pass
         
-    def display_suggestion_box(self, scored_guesses):
-        """Display a popup with the top move suggestions and their scores."""
-        suggestion_box = tk.Toplevel()
-        suggestion_box.title("Top 5 Move Suggestions and Scores")
-        suggestion_box.geometry("400x150")
-        suggestion_box.grab_set()
-        suggestion_box.iconbitmap("images/icons/Suggester.ico")
-        tk.Label(suggestion_box, text=scored_guesses[:5], wraplength=380).pack(pady=(10, 0))
-        tk.Button(suggestion_box, text="OK", command=suggestion_box.destroy).pack(pady=10,side= tk.BOTTOM)
+
+        
+class SuggestionOutput(tk.Toplevel):
+    """Display a popup with the top move suggestions and their scores."""
+    def __init__(self, parent, scored_guesses):
+        super().__init__(parent)
+        self.parent = parent
+        self.iconbitmap("images/icons/Suggester.ico")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.minsize(0, 100)
+        self.title("Top 5 Move Suggestions and Scores")
+        
+    # Makes this popup window behave like a dependent child of the parent
+        self.transient(parent)
+        # Grabs the focus and puts it onto this child window
+        self.grab_set()
+
+        tk.Label(self, text=scored_guesses[:5], wraplength=380).pack(padx=10, pady=5)
+
+        # OK button
+        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM,padx=10, pady=5)
+
+
+    def ok(self):
+        self.close()
+       
+    def close(self):
+        self.destroy()

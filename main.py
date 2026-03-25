@@ -27,22 +27,25 @@ class ChessGUI:
         # Track which player is the assisted one
         self.assisted_player = fow_chess.WHITE
 
+        # Makes instance of FowLogger
+        self.logger = FowLogger()
+
         # Makes instance of DrawBoard
         self.board_draw = DrawBoard(self.root, self.board, self.board_size, self.square_size, self.canvas)
 
         # Create an instance of InputProcessor and set a variable for bias
-        self.processor = InputProcessor()  
+        self.processor = InputProcessor(self.root, self.logger)  
         self.biases = self.processor.bias()
 
-        # Create an instance of FoW_Engine1
-        self.engine = FoW_Engine1(self.board, self.biases)
-        self.engine.start_engine()
-
         # Initialize GameOver
-        self.game_over = GameOver(self.root, self.board, self.engine)
+        self.game_over = GameOver(self.root, self.board, self.logger)
+
+        # Create an instance of FoW_Engine1
+        self.engine = FoW_Engine1(self.root, self.board, self.biases, self.game_over, self.logger)
+        self.game_over.assign_engine(self.engine)
 
         # Make instance of PlayGame
-        self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.assisted_player, self.board_draw, self.game_over, self.engine, self.biases)
+        self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.assisted_player, self.board_draw, self.game_over, self.engine, self.biases, self.logger)
 
         # Initialize game buttons
         self.suggest_move_button = self.play_game.suggest_move_button
@@ -51,7 +54,7 @@ class ChessGUI:
         self.transition_sides_button = self.play_game.transition_sides_button
         self.transition_sides_button.config(bg="SystemButtonShadow")
         self.transition_sides_button.pack(side=tk.LEFT)
-        self.print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=self.print_captured_pieces)
+        self.print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=lambda: CapturedOutput(self.root, self.play_game.captured_pieces))
         self.print_captured_button.pack(side=tk.LEFT)
         self.board_draw.draw_board()
 
@@ -67,7 +70,7 @@ class ChessGUI:
 
         # Makes it so you can hit Escape to leave the game
         self.root.bind("<Escape>", lambda event: self.game_over.quit_game())
-        self.root.bind("<Return>", lambda event: self.play_game.wait_lock.set(True))
+        self.root.bind("<Return>", lambda event : self.play_game.wait_lock.set(1)) # True
 
         # Makes it so that X-ing out of the application leaves the game
         self.root.protocol("WM_DELETE_WINDOW", self.game_over.quit_game)
@@ -79,22 +82,55 @@ class ChessGUI:
 
         # Draw the inital fog
         self.board_draw.draw_fog()
+        
+        # Start the chess engine
+        self.engine.start_engine()
     
-    def print_captured_pieces(self):
-        """Print the captured pieces for both players."""
-        captured_box = tk.Toplevel()
-        captured_box.title("Captured Pieces")
-        captured_box.geometry("300x150")
-        captured_box.grab_set()
-        captured_box.iconbitmap("images/icons/Captured.ico")
-        tk.Label(captured_box, text=self.play_game.captured_pieces, wraplength=280).pack(pady=(10, 0))
-        tk.Button(captured_box, text="OK", command=captured_box.destroy).pack(pady=10,side= tk.BOTTOM)
 
-    # make this an accessible list throughout code
-    def print_legal_moves(self, legal_moves):
-        """Prints legal moves to console for debugging purposes."""
-        print(legal_moves)
-        print(len(legal_moves))
+class CapturedOutput(tk.Toplevel):
+    """Display the captured pieces for both players."""
+    def __init__(self, parent, captured_pieces):
+        super().__init__(parent)
+        self.parent = parent
+        self.iconbitmap("images/icons/Captured.ico")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.minsize(200, 150)
+        self.title("Captured Pieces")
+        
+    # Makes this popup window behave like a dependent child of the parent
+        self.transient(parent)
+        # Grabs the focus and puts it onto this child window
+        self.grab_set()
+
+        tk.Label(self, text=captured_pieces, wraplength=280).pack(padx=50, pady=5)
+
+        # OK button
+        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM, padx=10, pady=5)
+
+
+    def ok(self):
+        self.close()
+       
+    def close(self):
+        self.destroy()
+        
+
+class FowLogger:
+    def __init__(self):
+        self.log("Game started")
+        #with open("gamelog.txt", 'w') as logfile:
+        #    logfile.write("")
+        pass
+    
+    def log(self, message):
+        with open("gamelog.txt", 'a') as logfile:
+            print(message)
+            print(message, file = logfile)
+            
+    def clear_log():
+        with open("gamelog.txt", 'w') as logfile:
+            logfile.write("")
+
 
 if __name__ == "__main__":
     root = tk.Tk()

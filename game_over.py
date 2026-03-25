@@ -2,18 +2,28 @@ from tkinter import messagebox
 import chess
 
 class GameOver: 
-    def __init__(self, root, board, engine):
+    def __init__(self, root, board, logger):
         self.root = root
         self.board = board
+        self.engine = None
+        self.logger = logger
+        
+    def assign_engine(self, engine):
         self.engine = engine
+        
+    def assign_wait_lock(self, wait_lock):
+        self.wait_lock = wait_lock
 
     def quit_game(self):
         # Close chess engine
         self.engine.close_engine()
         
+        # Make sure the player transition is completed
+        self.wait_lock.set(2) # Quit
+        
         # Close the GUI window
-        self.root.quit()
-        print("Game ended")
+        self.root.destroy()
+        self.logger.log("Game ended")
 
     def check_game_over(self):
         """Check if the game is over."""
