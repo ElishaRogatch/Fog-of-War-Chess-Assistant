@@ -2,10 +2,11 @@ from tkinter import messagebox
 import chess
 
 class GameOver: 
-    def __init__(self, root, board):
+    def __init__(self, root, board, logger):
         self.root = root
         self.board = board
         self.engine = None
+        self.logger = logger
         
     def assign_engine(self, engine):
         self.engine = engine
@@ -22,7 +23,7 @@ class GameOver:
         
         # Close the GUI window
         self.root.destroy()
-        print("Game ended")
+        self.logger.log("Game ended")
 
     def check_game_over(self):
         """Check if the game is over."""

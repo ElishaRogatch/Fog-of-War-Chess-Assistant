@@ -1,27 +1,32 @@
 import tkinter as tk
 
 class InputProcessor:
-    def __init__(self, root):
+    def __init__(self, root, logger):
         self.root = root
         self.enter_bias = tk.BooleanVar(self.root, value=True)
+        self.logger = logger
+        self.bias_display = BiasOutput(self.root)
     
     def bias(self):
         """Process user input to identify bias type."""
         input_value = "" 
         biases = {}
+        bias_values = {}
         while True:
             if not YesNoInput(self.root, "Would you like to enter a bias?").result:
                 break
             #ask user for type of bias
-            input_value, coefficient = PieceBiasInput(self.root).result
+            input_value, confidence, strength = PieceBiasInput(self.root).result
+            coefficient = confidence/100 * strength/100
             #process user input, based on whether input is no bias or a piece name
-            print(f"User input:{input_value}, {coefficient}") #DEVLOG
-            self.format_bias(input_value, coefficient, biases)
+            self.logger.log(f"User input:{input_value}, {coefficient}")
+            self.format_bias(input_value, confidence, strength, coefficient, biases, bias_values)
+        self.bias_display.close()
         return biases
                 
 
     # Idea: {"piece" : [("bishop", 0.5), "pawn"], }
-    def format_bias(self, user_input, coefficient, biases): 
+    def format_bias(self, user_input, confidence, strength, coefficient, biases, bias_values): 
         """Takes base user input and converts it to the formatted bias"""
         #TODO change bias to allow for openings as well as pieces
         if user_input:
@@ -33,9 +38,12 @@ class InputProcessor:
                     if matches[0] in biases:
                         if YesNoInput(self.root, "Entered bias already exists.\nWould you like to replace it?").result:
                             biases[matches[0]] = coefficient
+                            bias_values[matches[0]] = (confidence, strength)
                     else:
                         biases[matches[0]] = coefficient
+                        bias_values[matches[0]] = (confidence, strength)
                     #TODO TODO ACTUALLY MAKE THIS!!!!CLIENT NEEDS THIS! #update bias gui list
+                    self.bias_display.add_bias(bias_values)
                 else:
                     MessageOutput(self.root, "Multiple pieces detected in input.\nPlease enter them one at a time.")
             else: # No piece matches found in input
@@ -125,7 +133,7 @@ class PieceBiasInput(tk.Toplevel):
         self.iconbitmap("images/icons/Bias.ico")
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.title("Bias Input")
-        self.result = None, 0
+        self.result = None, 0, 0
         
         # Makes this popup window behave like a dependent child of the parent
         self.transient(parent)
@@ -162,7 +170,7 @@ class PieceBiasInput(tk.Toplevel):
 
     def ok(self):
         # Store the results from the entry box and the two bias sliders
-        self.result = self.entry.get(), self.confidence_var.get() / 100 * self.strength_var.get() / 100
+        self.result = self.entry.get(), self.confidence_var.get(), self.strength_var.get()
         self.close()
 
     def cancel(self):
@@ -171,6 +179,36 @@ class PieceBiasInput(tk.Toplevel):
     def close(self):
         del self.confidence_var
         del self.strength_var
+        self.destroy()
+        
+class BiasOutput(tk.Toplevel):
+    """Display the captured pieces for both players."""
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.iconbitmap("images/icons/Bias.ico")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.minsize(200, 150)
+        self.title("User Biases")
+        self.bias_text = tk.StringVar()
+        
+    # Makes this popup window behave like a dependent child of the parent
+        self.transient(parent)
+        # Grabs the focus and puts it onto this child window
+        self.grab_set()
+
+        tk.Label(self, textvariable=self.bias_text, wraplength=280, justify="left").pack(padx=50, pady=5, )
+
+
+    def add_bias(self, biases):
+        text = ""
+        sorted_biases = dict(sorted(biases.items(), key=lambda x: x[1][0]*x[1][1], reverse=True))
+        for bias in sorted_biases:
+            print(f"DEBUG this is {bias}")
+            text += f"{bias}\t\t{biases[bias][0]}\t\t{biases[bias][1]}\n"
+        self.bias_text.set("Piece\t\tConfidence\tStrength\n\n" + text)
+       
+    def close(self):
         self.destroy()
 
 

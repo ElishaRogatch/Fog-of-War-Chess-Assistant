@@ -27,22 +27,25 @@ class ChessGUI:
         # Track which player is the assisted one
         self.assisted_player = fow_chess.WHITE
 
+        # Makes instance of FowLogger
+        self.logger = FowLogger()
+
         # Makes instance of DrawBoard
         self.board_draw = DrawBoard(self.root, self.board, self.board_size, self.square_size, self.canvas)
 
         # Create an instance of InputProcessor and set a variable for bias
-        self.processor = InputProcessor(self.root)  
+        self.processor = InputProcessor(self.root, self.logger)  
         self.biases = self.processor.bias()
 
         # Initialize GameOver
-        self.game_over = GameOver(self.root, self.board)
+        self.game_over = GameOver(self.root, self.board, self.logger)
 
         # Create an instance of FoW_Engine1
-        self.engine = FoW_Engine1(self.root, self.board, self.biases, self.game_over)
+        self.engine = FoW_Engine1(self.root, self.board, self.biases, self.game_over, self.logger)
         self.game_over.assign_engine(self.engine)
 
         # Make instance of PlayGame
-        self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.assisted_player, self.board_draw, self.game_over, self.engine, self.biases)
+        self.play_game = PlayGame(self.root, self.board, self.canvas, self.square_size, self.assisted_player, self.board_draw, self.game_over, self.engine, self.biases, self.logger)
 
         # Initialize game buttons
         self.suggest_move_button = self.play_game.suggest_move_button
@@ -84,14 +87,6 @@ class ChessGUI:
         self.engine.start_engine()
     
 
-    # DEBUG make this an accessible list throughout code
-    def print_legal_moves(self, legal_moves):
-        """Prints legal moves to console for debugging purposes."""
-        print(legal_moves)
-        print(len(legal_moves))
-
-
-
 class CapturedOutput(tk.Toplevel):
     """Display the captured pieces for both players."""
     def __init__(self, parent, captured_pieces):
@@ -118,6 +113,23 @@ class CapturedOutput(tk.Toplevel):
        
     def close(self):
         self.destroy()
+        
+
+class FowLogger:
+    def __init__(self):
+        self.log("Game started")
+        #with open("gamelog.txt", 'w') as logfile:
+        #    logfile.write("")
+        pass
+    
+    def log(self, message):
+        with open("gamelog.txt", 'a') as logfile:
+            print(message)
+            print(message, file = logfile)
+            
+    def clear_log():
+        with open("gamelog.txt", 'w') as logfile:
+            logfile.write("")
 
 
 if __name__ == "__main__":

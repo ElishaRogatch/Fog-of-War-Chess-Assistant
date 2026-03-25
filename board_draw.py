@@ -19,6 +19,7 @@ class DrawBoard:
 
         # Track dots for move indicators
         self.move_dots = []
+        
 
     def load_piece_images(self):
         """Load piece images from files (you can use any chess piece images here by replacing the .png files in the 'pieces' folder)."""

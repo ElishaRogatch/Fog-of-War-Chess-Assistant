@@ -5,7 +5,7 @@ from probable_state_analyzer import ProbableStateAnalyzer
 import copy
 
 class PlayGame:
-    def __init__(self, root, board, canvas, square_size, assisted_player, board_draw, game_over, engine, biases):
+    def __init__(self, root, board, canvas, square_size, assisted_player, board_draw, game_over, engine, biases, logger):
         """Initialize game state and GUI elements."""
         self.root = root
         self.board = board
@@ -16,6 +16,7 @@ class PlayGame:
         self.game_over = game_over
         self.engine = engine
         self.biases = biases
+        self.logger = logger
 
         # Track selected square and moves
         self.selected_square = None
@@ -90,6 +91,7 @@ class PlayGame:
                 move = chess.Move(self.selected_square, clicked_square)
                 ask_promotion = False
             if move in self.board.fow_legal_moves:
+                self.logger.log(f"{chess.COLOR_NAMES[self.board.turn]} makes the move {move.uci()}")
                 if ask_promotion:
                     # Have user choose promotion piece
                     promotion_piece = tk.StringVar(value="Queen")
@@ -122,15 +124,15 @@ class PlayGame:
                 self.update_suggest_button_state()
                 if self.assisted_player == self.board.turn: # Non-assisted player just moved
                     self.BSL.pre_move_limiting()
-                    print(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
+                    self.logger.log(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
                     self.PSA.analyze_states()
-                    print(f"Board scores \n{self.PSA.board_scores}")
+                    self.logger.log(f"Board scores \n{self.PSA.board_scores}")
                     #for i in self.PSA.board_scores: #DEBUG PSA board print
                     #    print(f"board number {i[0]} score is {i[1]}")#DEBUG PSA board print
                     #    print(self.BSL.board_states[i[0]])#DEBUG PSA board print
                 else: # Assisted player just moved
                     self.BSL.post_move_limiting()
-                    print(f"Number of potential post-turn states {len(self.BSL.board_states)}")
+                    self.logger.log(f"Number of potential post-turn states {len(self.BSL.board_states)}")
                 
                 if self.transition_sides.get() and self.wait_lock.get() != 2:
                     # Wait for next player, Black out board, Draw the board and fog for the next player
