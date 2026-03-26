@@ -5,6 +5,7 @@ from input_processor import InputProcessor
 from board_draw import DrawBoard
 from play_game import PlayGame
 from game_over import GameOver
+from predictions import PredictionWindow
 
 
 class ChessGUI:
@@ -85,7 +86,19 @@ class ChessGUI:
         
         # Start the chess engine
         self.engine.start_engine()
-    
+
+        # Create the prediction window via the prediction class and pass the root
+        self.prediction_window = PredictionWindow(self.root)
+
+        def toggle_predictions():
+            self.prediction_window.toggle()
+        
+        # Create a button to toggle the prediction window
+        self.toggle_predictions_button = tk.Button(self.root, text="Toggle Predictions", command=toggle_predictions)
+        self.toggle_predictions_button.pack() # This causes the window to be visible on startup, but we will immediately hide it in the next line
+
+        # Re-hide the prediction window on startup
+        self.prediction_window.prediction_window.withdraw()    
 
 class CapturedOutput(tk.Toplevel):
     """Display the captured pieces for both players."""
