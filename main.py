@@ -88,14 +88,23 @@ class ChessGUI:
         self.engine.start_engine()
 
         # Create the prediction window via the prediction class and pass the root
-        self.prediction_window = PredictionWindow(self.root)
+        self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL)
 
         def toggle_predictions():
             self.prediction_window.toggle()
+            # Change the button color based on the visibility of the prediction window
+            if self.prediction_window.isVisible:
+                self.toggle_predictions_button.config(bg="SystemButtonShadow") # Shadow when toggled on
+            else:
+                self.toggle_predictions_button.config(bg="SystemButtonFace") # Light when toggled off
+
+        # Override the close button to toggle visibility instead of destroying the window
+        self.prediction_window.protocol("WM_DELETE_WINDOW", self.toggle_predictions)         
         
         # Create a button to toggle the prediction window
         self.toggle_predictions_button = tk.Button(self.root, text="Toggle Predictions", command=toggle_predictions)
-        self.toggle_predictions_button.pack() # This causes the window to be visible on startup, but we will immediately hide it in the next line
+        self.toggle_predictions_button.config(bg="SystemButtonFace")
+        self.toggle_predictions_button.pack()
 
         # Re-hide the prediction window on startup
         self.prediction_window.prediction_window.withdraw()    

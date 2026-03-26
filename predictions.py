@@ -5,9 +5,12 @@ from probable_state_analyzer import ProbableStateAnalyzer
 from board_state_limiter import BoardStateLimiter
 
 class PredictionWindow:
-    def __init__(self, root):
+    def __init__(self, root, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter):
         """Initialize the prediction window."""
-        
+        # Store references to the PSA and BSL for accessing predictions and board states
+        self.PSA = PSA
+        self.BSL = BSL
+
         # Chess board size
         self.board_size = 8
         self.square_size = 64  # Size of each square in pixels
@@ -18,7 +21,7 @@ class PredictionWindow:
 
         # Create a canvas to display predictions 
         self.canvas = tk.Canvas(self.prediction_window, width=self.board_size * self.square_size, height=self.board_size * self.square_size)
-        
+
         # Global variable to track visibility of the prediction window
         self.isVisible = False
 
@@ -55,12 +58,13 @@ class PredictionWindow:
         self.compiled_prediction_board = fow_chess.FowBoard() # This will be updated with the compiled prediction and piece vision toggles
         self.prediction_board_draw = DrawBoard(self.prediction_window, self.prediction_board, self.board_size, self.square_size, self.canvas)
 
-        # These two lines currently dont seem to work to draw the board on the prediction window
+        # Use the DrawBoard instance to draw the initial prediction board (need to initialize the list of predictions from the PSA here as well)
         self.prediction_board_draw.draw_board()
         self.prediction_board_draw.update_pieces()
+        self.canvas.pack()
 
         # Store PSA output for the 5 most probable states and the compiled prediction
-        #self.psa_predictions = [PSA.boards[5:]] (not ready to be implemented yet as PSA and BSL do not currently share data to the prediction window, but this is where the predictions will be stored once that is implemented)
+        self.psa_predictions = [self.PSA.board_scores[:5]] # This is a list of the 5 most probable board states from the PSA, which will be used to switch between predictions
 
     # ------- Button Creation and Configuration --------
     def create_buttons(self):
