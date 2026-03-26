@@ -21,7 +21,10 @@ class PredictionWindow:
 
         # Create a canvas to display predictions 
         self.canvas = tk.Canvas(self.prediction_window, width=self.board_size * self.square_size, height=self.board_size * self.square_size)
-
+        
+        # Override the close button to toggle visibility instead of destroying the window
+        self.prediction_window.protocol("WM_DELETE_WINDOW", self.toggle)  
+        
         # Global variable to track visibility of the prediction window
         self.isVisible = False
 

@@ -96,10 +96,7 @@ class ChessGUI:
             if self.prediction_window.isVisible:
                 self.toggle_predictions_button.config(bg="SystemButtonShadow") # Shadow when toggled on
             else:
-                self.toggle_predictions_button.config(bg="SystemButtonFace") # Light when toggled off
-
-        # Override the close button to toggle visibility instead of destroying the window
-        self.prediction_window.protocol("WM_DELETE_WINDOW", self.toggle_predictions)         
+                self.toggle_predictions_button.config(bg="SystemButtonFace") # Light when toggled off       
         
         # Create a button to toggle the prediction window
         self.toggle_predictions_button = tk.Button(self.root, text="Toggle Predictions", command=toggle_predictions)
