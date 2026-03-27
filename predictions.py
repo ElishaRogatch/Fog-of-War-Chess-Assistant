@@ -16,20 +16,17 @@ class PredictionWindow:
         self.square_size = 64  # Size of each square in pixels
 
         # Create a new Toplevel window for predictions
-        self.prediction_window = tk.Toplevel(root)
-        self.prediction_window.title("Opponent Move Predictions")
+        self.prediction_window_root = tk.Toplevel(root)
+        self.prediction_window_root.title("Opponent Move Predictions")
 
         # Create a canvas to display predictions 
-        self.canvas = tk.Canvas(self.prediction_window, width=self.board_size * self.square_size, height=self.board_size * self.square_size)
-        
-        # Override the close button to toggle visibility instead of destroying the window
-        self.prediction_window.protocol("WM_DELETE_WINDOW", self.toggle)  
+        self.canvas = tk.Canvas(self.prediction_window_root, width=self.board_size * self.square_size, height=self.board_size * self.square_size)
         
         # Global variable to track visibility of the prediction window
         self.isVisible = False
 
         # Frame to hold the buttons for switching predictions
-        self.button_frame = tk.Frame(self.prediction_window)
+        self.button_frame = tk.Frame(self.prediction_window_root)
         self.button_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Lists to store button objects and images 
@@ -59,7 +56,7 @@ class PredictionWindow:
         # Store other variables for predictions and piece vision states
         self.prediction_board = fow_chess.FowBoard() # This will be updated with the predicted board state
         self.compiled_prediction_board = fow_chess.FowBoard() # This will be updated with the compiled prediction and piece vision toggles
-        self.prediction_board_draw = DrawBoard(self.prediction_window, self.prediction_board, self.board_size, self.square_size, self.canvas)
+        self.prediction_board_draw = DrawBoard(self.prediction_window_root, self.prediction_board, self.board_size, self.square_size, self.canvas)
 
         # Use the DrawBoard instance to draw the initial prediction board (need to initialize the list of predictions from the PSA here as well)
         self.prediction_board_draw.draw_board()
@@ -97,9 +94,9 @@ class PredictionWindow:
     def toggle(self):
         """Toggle the visibility of the prediction window."""
         if self.isVisible:
-            self.prediction_window.withdraw()  # Hide the window
+            self.prediction_window_root.withdraw()  # Hide the window
         else:
-            self.prediction_window.deiconify()  # Show the window
+            self.prediction_window_root.deiconify()  # Show the window
 
         self.isVisible = not self.isVisible # Flip the boolean value for next toggle
 

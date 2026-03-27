@@ -96,7 +96,10 @@ class ChessGUI:
             if self.prediction_window.isVisible:
                 self.toggle_predictions_button.config(bg="SystemButtonShadow") # Shadow when toggled on
             else:
-                self.toggle_predictions_button.config(bg="SystemButtonFace") # Light when toggled off       
+                self.toggle_predictions_button.config(bg="SystemButtonFace") # Light when toggled off     
+
+        # Override the close button to toggle visibility instead of destroying the window
+        self.prediction_window.prediction_window_root.protocol("WM_DELETE_WINDOW", toggle_predictions)    
         
         # Create a button to toggle the prediction window
         self.toggle_predictions_button = tk.Button(self.root, text="Toggle Predictions", command=toggle_predictions)
@@ -104,7 +107,7 @@ class ChessGUI:
         self.toggle_predictions_button.pack()
 
         # Re-hide the prediction window on startup
-        self.prediction_window.prediction_window.withdraw()    
+        self.prediction_window.prediction_window_root.withdraw()    
 
 class CapturedOutput(tk.Toplevel):
     """Display the captured pieces for both players."""
