@@ -3,6 +3,7 @@ import tkinter as tk
 from board_state_limiter import BoardStateLimiter
 from probable_state_analyzer import ProbableStateAnalyzer
 import copy
+from predictions import PredictionWindow
 
 class PlayGame:
     def __init__(self, root, board, canvas, square_size, assisted_player, board_draw, game_over, engine, biases, logger):
@@ -40,6 +41,10 @@ class PlayGame:
         self.transition_sides = tk.BooleanVar(root, value=False)
         self.wait_lock = tk.IntVar(root, value= 0) # False
         self.game_over.assign_wait_lock(self.wait_lock)
+
+    def set_prediction_window(self, prediction_window: PredictionWindow):
+        """Set the prediction window instance for this class."""
+        self.prediction_window = prediction_window
 
     def update_suggest_button_state(self):
         """Updates the button state so its enabled or not based on whose turn it is."""
@@ -127,6 +132,10 @@ class PlayGame:
                     self.logger.log(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
                     self.PSA.analyze_states()
                     self.logger.log(f"Board scores \n{self.PSA.board_scores}")
+
+                    # Possibly add a data pass to the prediction window to have it update the predictions list (needs access to the prediction window class)
+                    self.prediction_window.update_predictions(self.PSA.board_scores)
+
                     #for i in self.PSA.board_scores: #DEBUG PSA board print
                     #    print(f"board number {i[0]} score is {i[1]}")#DEBUG PSA board print
                     #    print(self.BSL.board_states[i[0]])#DEBUG PSA board print

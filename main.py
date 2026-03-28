@@ -89,14 +89,15 @@ class ChessGUI:
 
         # Create the prediction window via the prediction class and pass the root
         self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL)
+        self.play_game.set_prediction_window(self.prediction_window) # Pass the prediction window instance to the play game class
 
         def toggle_predictions():
             self.prediction_window.toggle()
             # Change the button color based on the visibility of the prediction window
             if self.prediction_window.isVisible:
-                self.toggle_predictions_button.config(bg="SystemButtonShadow") # Shadow when toggled on
+                self.toggle_predictions_button.config(relief="sunken", bg="SystemButtonShadow") # Shadow when toggled on
             else:
-                self.toggle_predictions_button.config(bg="SystemButtonFace") # Light when toggled off     
+                self.toggle_predictions_button.config(relief="raised", bg="SystemButtonFace") # Light when toggled off     
 
         # Override the close button to toggle visibility instead of destroying the window
         self.prediction_window.prediction_window_root.protocol("WM_DELETE_WINDOW", toggle_predictions)    
