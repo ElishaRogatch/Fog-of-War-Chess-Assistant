@@ -53,7 +53,6 @@ class ChessGUI:
         self.suggest_move_button.pack(side=tk.LEFT)
         self.play_game.update_suggest_button_state()
         self.transition_sides_button = self.play_game.transition_sides_button
-        self.transition_sides_button.config(bg="SystemButtonShadow")
         self.transition_sides_button.pack(side=tk.LEFT)
         self.print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=lambda: CapturedOutput(self.root, self.play_game.captured_pieces))
         self.print_captured_button.pack(side=tk.LEFT)

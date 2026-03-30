@@ -190,7 +190,7 @@ class BiasOutput(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.minsize(200, 150)
         self.title("User Biases")
-        self.bias_text = tk.StringVar()
+        self.bias_text = tk.StringVar(value="Piece\t\tConfidence\tStrength\n\n")
         
     # Makes this popup window behave like a dependent child of the parent
         self.transient(parent)

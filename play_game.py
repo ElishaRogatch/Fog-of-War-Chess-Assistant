@@ -56,10 +56,10 @@ class PlayGame:
     def update_transition_sides_state(self):
         """Updates the transition sides button state and variable."""
         if self.transition_sides.get():
-            self.transition_sides_button.config(bg="SystemButtonShadow")
+            self.transition_sides_button.config(relief= tk.RAISED, bg="SystemButtonFace")
             self.transition_sides.set(False)
         else:
-            self.transition_sides_button.config(bg="SystemButtonFace")
+            self.transition_sides_button.config(relief= tk.SUNKEN, bg="SystemButtonShadow")
             self.transition_sides.set(True)
 
     def update_turn_label(self):
@@ -133,7 +133,7 @@ class PlayGame:
                     self.PSA.analyze_states()
                     self.logger.log(f"Board scores \n{self.PSA.board_scores}")
 
-                    # Possibly add a data pass to the prediction window to have it update the predictions list (needs access to the prediction window class)
+                    # Data pass to the prediction window to have it update the predictions list
                     self.prediction_window.update_predictions(self.PSA.board_scores)
 
                     #for i in self.PSA.board_scores: #DEBUG PSA board print
