@@ -17,9 +17,15 @@ class DrawBoard:
         # Load piece images
         self.piece_images = self.load_piece_images()
 
+        # Load outline images for frequency indicators
+        self.outline_images = self.load_outline_images()
+
         # Track dots for move indicators
         self.move_dots = []
-        
+
+    def set_prediction_window(self, prediction_window):
+        """Set the prediction window instance to access the percentage frequencies for drawing outlines."""
+        self.prediction_window = prediction_window
 
     def load_piece_images(self):
         """Load piece images from files (you can use any chess piece images here by replacing the .png files in the 'pieces' folder)."""
@@ -29,6 +35,14 @@ class DrawBoard:
             piece_images[piece] = tk.PhotoImage(file=f"images/pieces/{piece}.png")
         return piece_images
     
+    def load_outline_images(self):
+        outlines = ["bp", "br", "bn", "bb", "bq", "bk"]
+        outline_images = {}
+        for outline in outlines:
+            for color in ["red", "yellow", "green"]:
+                outline_images[f"{outline}_outline_{color}"] = tk.PhotoImage(file=f"images/outlines/{outline}_outline_{color}.png")
+        return outline_images
+
     def draw_board(self):
         """Draw the chessboard on the canvas."""
         colors = ["#d6c0a8", "#51361a"]  # Light and dark squares
@@ -65,6 +79,7 @@ class DrawBoard:
     def update_pieces(self):
         """Place pieces on the board according to the current board state."""
         # Clear all existing pieces from the board
+        self.canvas.delete("outline")
         self.canvas.delete("piece")
 
         # Place pieces on the board
@@ -78,6 +93,44 @@ class DrawBoard:
                         x = col * self.square_size
                         y = row * self.square_size
                         self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, image=image, tags="piece")
+    
+    def update_outlines(self):
+        """Update the outlines on the pieces based on move frequencies."""
+        # Clear existing outlines
+        self.canvas.delete("piece")
+        self.canvas.delete("outline")
+
+        # Add outline images in place of piece images based on the percentage frequencies from the prediction window
+        for row in range(8):
+            for col in range(8):
+                tile = chess.square(col, 7 - row)
+                piece = self.board.piece_at(tile)
+                if piece:
+                    # Determine the color of the outline based on the percentage frequency of the piece type on the current tile from the prediction window
+                    index = piece.piece_type - 1 # Get the index for the piece type (0-5 for pawn to king)
+                    percentage = self.prediction_window.percentages[tile][index] # Get the percentage for the piece type on the current tile
+                    color = self.get_outline_color(percentage) # Determine the color of the outline based on the percentage
+                    piece_str = piece.symbol().lower() # Get the piece symbol in lowercase (e.g., 'p', 'r', 'n', etc.)
+                    if color:
+                        outline_image = self.outline_images.get(f"b{piece_str}_outline_{color}") # Get the corresponding outline image based on the piece type and color
+                    else:
+                        outline_image = self.piece_images.get(f"{'w' if piece.color else 'b'}{piece_str}") # If no outline, just show the piece image (includes white pieces)
+                    if outline_image:
+                        x = col * self.square_size
+                        y = row * self.square_size
+                        self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, image=outline_image, tags="outline")
+
+    def get_outline_color(self, percentage):
+        """Determine the color of the outline based on the percentage frequency."""
+        # Confidences: No Outline - 100%, Green - 70%-99%, Yellow - 36%-69%, Red - 0%-35%  
+        if percentage >= 70 and percentage < 100:
+            return "green"
+        elif percentage >= 36 and percentage < 70:
+            return "yellow"
+        elif percentage > 0 and percentage < 36:
+            return "red"
+        else:
+            return None
         
     def draw_fog(self):
         """Draws a fog overlay on squares that aren't visible to the white player."""

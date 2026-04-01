@@ -6,11 +6,12 @@ from probable_state_analyzer import ProbableStateAnalyzer
 from board_state_limiter import BoardStateLimiter
 
 class PredictionWindow:
-    def __init__(self, root, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter):
+    def __init__(self, root, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter, main_board: fow_chess.FowBoard):
         """Initialize the prediction window."""
         # Store references to the PSA and BSL for accessing predictions and board states
         self.PSA = PSA
         self.BSL = BSL
+        self.main_board = main_board
 
         # Chess board size
         self.board_size = 8
@@ -34,7 +35,8 @@ class PredictionWindow:
         # Lists to store button objects and images 
         self.buttons = [] # [Prediction 1, Prediction 2, Prediction 3, Prediction 4, Prediction 5, Compiled Prediction, Toggle bp vision, Toggle br vision, Toggle bn vision, Toggle bb vision, Toggle bq vision, Toggle bk vision]
         self.button_images = []
-        self.piece_names = ["bp", "br", "bn", "bb", "bq", "bk"]
+        self.piece_names = ["bp", "bn", "bb", "br", "bq", "bk"] 
+        self.initialize_percentages() # This will be used to store the percentage frequencies of pieces on tiles across all predicted board states for use in drawing outlines on the prediction board based on piece frequency in the predictions
 
         # Configuration for the buttons
         self.button_configs = [
@@ -73,6 +75,8 @@ class PredictionWindow:
         self.compiled_prediction_board = fow_chess.FowBoard() # This will be updated with the compiled prediction and piece vision toggles
         self.compiled_prediction_board_copy = self.compiled_prediction_board.copy() # Copy for safe modification when updating the compiled prediction based on piece vision toggles
         self.prediction_board_draw = DrawBoard(self.prediction_window_root, fow_chess.FowBoard(), self.board_size, self.square_size, self.canvas)
+        self.prediction_board_draw.set_prediction_window(self) # Pass the prediction window instance to the board draw class
+        self.create_compiled_prediction() # Create the initial compiled prediction based on the initial predictions from the PSA and the current piece vision toggles (which are all off at the start)
 
         # Use the DrawBoard instance to draw the initial prediction board and pieces
         self.prediction_board_draw.draw_board()
@@ -89,10 +93,13 @@ class PredictionWindow:
         # If the currently active prediction index is greater than the number of available predictions, reset it to 0
         if self.active_prediction >= len(self.psa_predictions):
             self.active_prediction = 0
+            self.active_piece_vision = None
         
-        # Then update the prediciton board
+        # Then update the prediciton board buttons
         self.enable_disable_prediction_buttons()
         self.update_prediction_buttons()
+        self.enable_disable_piece_vision_buttons()
+        self.update_piece_vision_buttons()
 
         self.update_prediction_board(self.psa_predictions[self.active_prediction][0])        
 
@@ -104,7 +111,7 @@ class PredictionWindow:
     def update_compiled_prediction(self, compiled_board_state: fow_chess.FowBoard):
         """Update the drawn board to reflect the compiled prediction state."""
         self.prediction_board_draw.board = compiled_board_state
-        self.prediction_board_draw.update_pieces()
+        self.prediction_board_draw.update_outlines()
 
     # ------- Button Creation and Configuration --------
     def create_buttons(self):
@@ -197,7 +204,6 @@ class PredictionWindow:
 
     def toggle_specific_piece_vision(self, piece_type: str):
         """Toggle the vision of a specific piece type in the compiled prediction."""
-        # Still needs to remove the pieces not selected from the compiled prediction board and update the prediction board draw to reflect the changes in piece vision
         isSwitching = self.active_piece_vision is not None and self.active_piece_vision != piece_type # Check if we are switching to a different piece vision from a currently toggled piece vision
         isFirstToggle = self.active_piece_vision is None # Check if this is the first piece vision being toggled on
         isUntoggling = self.active_piece_vision == piece_type # Check if we are toggling off the current piece vision
@@ -213,9 +219,11 @@ class PredictionWindow:
         if isFirstToggle:
             self.compiled_prediction_board_copy = self.compiled_prediction_board.copy() # Make a copy of the current compiled prediction boardbefore modifying
             self.remove_other_pieces(piece_type) 
+            self.add_low_percentage_pieces(piece_type) # Add back pieces of the toggled piece type that were removed based on low frequency in the predictions, so that they are visible when toggling on that piece vision
         elif isSwitching:
             self.compiled_prediction_board = self.compiled_prediction_board_copy.copy() # Start with a fresh copy of the compiled prediction board to remove pieces from based on the piece vision toggle
-            self.remove_other_pieces(piece_type) 
+            self.remove_other_pieces(piece_type)
+            self.add_low_percentage_pieces(piece_type) # Add back pieces of the toggled piece type that were removed based on low frequency in the predictions, so that they are visible when toggling on that piece vision
         elif isUntoggling:
             self.compiled_prediction_board = self.compiled_prediction_board_copy.copy() # If toggling off the current piece vision, reset to the saved copy
 
@@ -225,15 +233,23 @@ class PredictionWindow:
     def remove_other_pieces(self, piece_type: str):
         """Remove pieces that are not the specified piece type from the compiled prediction board."""
         # Loop through the squares on the board
-        for row in range(8):
-                for col in range(8):
-                    tile = chess.square(col, 7- row)
-                    piece = self.compiled_prediction_board.piece_at(tile)
-                    if piece is not None and piece.color == chess.BLACK: # Only consider opponent pieces for the predictions
-                        if chess.PIECE_SYMBOLS[piece.piece_type] == piece_type[1]: # If the piece type matches the toggled piece type, set it on the compiled prediction board, otherwise remove it from the compiled prediction board
-                            self.compiled_prediction_board.set_piece_at(tile, piece)
-                        else:
-                            self.compiled_prediction_board.remove_piece_at(tile)
+        for tile in chess.SQUARES:
+            piece = self.compiled_prediction_board.piece_at(tile)
+            if piece is not None and piece.color == chess.BLACK: # Only consider opponent pieces for the predictions
+                if chess.PIECE_SYMBOLS[piece.piece_type] == piece_type[1]: # If the piece type matches the toggled piece type, set it on the compiled prediction board, otherwise remove it from the compiled prediction board
+                    self.compiled_prediction_board.set_piece_at(tile, piece)
+                else:
+                    self.compiled_prediction_board.remove_piece_at(tile)
+
+    def add_low_percentage_pieces(self, piece_type: str):
+        """Add pieces of the specified piece type back to the compiled prediction board if their frequency percentage across all boards is greater than 0."""
+        # Loop through the squares on the board
+        for tile in chess.SQUARES:
+            self.piece_counts[tile] = self.piece_counts.get(tile, [0]*6) # Get the piece counts for the tile, default to [0]*6 if not found
+            piece_index = self.piece_names.index(piece_type) # Get the index of the piece type in the piece names list to access the corresponding count in the piece counts
+            count = self.piece_counts[tile][piece_index] # Get the count of the toggled piece type on the tile across all predicted board states
+            if count > 0: # If the piece is present on at least one predicted board state, add it back to the compiled prediction board so that it is visible when toggling on the piece vision
+                self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_index + 1, chess.BLACK)) # Piece types are 1-indexed in the piece counts list, so add 1 to get the actual piece type and set it on the compiled prediction board
  
     # --------- Compiled Prediction Creation and Updating ---------
     def create_compiled_prediction(self):
@@ -250,13 +266,22 @@ class PredictionWindow:
                 piece = board.piece_at(tile)
                 if piece and piece.color == chess.BLACK: # Only consider opponent pieces for the predictions
                     piece_counts[tile][piece.piece_type - 1] += 1 # Piece types are 1:pawn, 2:knight, 3:bishop, 4:rook, 5:queen, 6:king
-
+        
+        self.piece_counts = piece_counts # Store the piece counts for use in the piece vision toggle function to determine whether to add back pieces that were removed based on low frequency
         self.create_compiled_prediction_board(piece_counts) # Create the compiled prediction board based on the frequency of pieces in the predictions and the current piece vision toggles
+        self.add_back_white_pieces() # Add back white pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces
 
     def create_compiled_prediction_board(self, piece_counts: dict):
         """Create a compiled prediction board based on the frequency of pieces in the predictions and the current piece vision toggles."""
+        states = len(self.BSL.board_states) # Total number of states to be used in percentage calculations for piece frequency across all board states 
         for tile, counts in piece_counts.items():
-            total_pieces = sum(counts)
+            total_pieces = sum(counts) # Total of all types of pieces on the current tile across all predicted board states          
+
+            # Calculate and add the percentage for each type of piece on the current tile
+            percentage = [(count / states)*100 for count in counts] # Calculate the percentage frequency of each piece type on the tile across all predicted board states when there are multiple piece types on the current tile (Needs to be accessed by board draw to draw the correct outlines.)
+            self.percentages[tile] = percentage
+
+            # Using total pieces on the current tile across all predictions, determine which piece to show on the compiled prediction board 
             if total_pieces == 0:
                 continue  # No black pieces predicted on this tile
 
@@ -268,3 +293,17 @@ class PredictionWindow:
                 # Multiple predictions -> pick the most frequent piece
                 piece_type = counts.index(max(counts)) + 1 # Piece types are 1-indexed in the counts list, so add 1 to get the actual piece type
                 self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_type, chess.BLACK)) # Update the board with the piece
+        
+        #for tile in chess.SQUARES:
+        #    print(f"Tile {chess.square_name(tile)}: Percentages {self.percentages[tile]}") # DEBUG print to check the calculated percentages for each tile
+
+    def add_back_white_pieces(self):
+        """Add back white pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces."""
+        for tile in chess.SQUARES:
+            piece = self.main_board.piece_at(tile) # Check the current board state for white pieces to add back to the compiled prediction board
+            if piece and piece.color == chess.WHITE:
+                self.compiled_prediction_board.set_piece_at(tile, piece) # Add back the white piece to the compiled prediction board
+    
+    def initialize_percentages(self):
+        """Initialize the percentages dictionary with 0% for all piece types on all tiles."""
+        self.percentages = {tile : [0] * 6 for tile in chess.SQUARES}  # Format: {tile : percentages[percentage_pawns, percentage_knights, percentage_bishops, percentage_rooks, percentage_queens, percentage_kings]} 

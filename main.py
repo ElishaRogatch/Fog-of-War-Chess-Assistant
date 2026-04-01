@@ -7,7 +7,6 @@ from play_game import PlayGame
 from game_over import GameOver
 from predictions import PredictionWindow
 
-
 class ChessGUI:
     def __init__(self, root):
         """Initialize the main GUI application."""
@@ -87,7 +86,7 @@ class ChessGUI:
         self.engine.start_engine()
 
         # Create the prediction window via the prediction class and pass the root
-        self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL)
+        self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL, self.board) 
         self.play_game.set_prediction_window(self.prediction_window) # Pass the prediction window instance to the play game class
 
         def toggle_predictions():
