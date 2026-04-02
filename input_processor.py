@@ -3,7 +3,7 @@ import tkinter as tk
 class InputProcessor:
     def __init__(self, root, logger):
         self.root = root
-        self.enter_bias = tk.BooleanVar(self.root, value=True)
+        #self.enter_bias = tk.BooleanVar(self.root, value=True)
         self.logger = logger
         self.bias_display = BiasOutput(self.root)
     
@@ -22,39 +22,41 @@ class InputProcessor:
             self.logger.log(f"User input:{input_value}, {coefficient}")
             self.format_bias(input_value, confidence, strength, coefficient, biases, bias_values)
         self.bias_display.close()
+        print("THis is the dictionary")
         return biases
                 
 
-    # Idea: {"piece" : [("bishop", 0.5), "pawn"], }
     def format_bias(self, user_input, confidence, strength, coefficient, biases, bias_values): 
         """Takes base user input and converts it to the formatted bias"""
         #TODO change bias to allow for openings as well as pieces
         if user_input:
-            user_input = user_input.lower() # Standardize input
-            pieces = ["pawn", "knight", "bishop", "rook", "queen", "king"]
-            matches = [p for p in pieces if p in user_input]
-            if matches:
-                if len(matches) == 1:
-                    if matches[0] in biases:
-                        if YesNoInput(self.root, "Entered bias already exists.\nWould you like to replace it?").result:
-                            biases[matches[0]] = coefficient
-                            bias_values[matches[0]] = (confidence, strength)
-                    else:
-                        biases[matches[0]] = coefficient
-                        bias_values[matches[0]] = (confidence, strength)
-                    #TODO TODO ACTUALLY MAKE THIS!!!!CLIENT NEEDS THIS! #update bias gui list
-                    self.bias_display.add_bias(bias_values)
+            if user_input in biases:
+                if coefficient == 0:
+                    if YesNoInput(self.root, "An entered bias parameter is 0.\nWould you like to remove it?").result:
+                        del biases[user_input]
+                        del bias_values[user_input]
+                        print("THis is the dictionary")
+                        print(biases)
+                elif YesNoInput(self.root, "Entered bias already exists.\nWould you like to replace it?").result:
+                    biases[user_input] = coefficient
+                    bias_values[user_input] = (confidence, strength)
+            else:
+                if coefficient == 0:
+                    MessageOutput(self.root, "An entered bias parameter is 0.\nBias will not be added")
                 else:
-                    MessageOutput(self.root, "Multiple pieces detected in input.\nPlease enter them one at a time.")
-            else: # No piece matches found in input
-                MessageOutput(self.root, "Entered bias does not match a known piece.")
+                    biases[user_input] = coefficient
+                    bias_values[user_input] = (confidence, strength)
+                    print("THis is the dictionary")
+                    print(biases)
+            #update bias gui list
+            self.bias_display.add_bias(bias_values)
         else:
             MessageOutput(self.root, "No input provided!")
     
  
  
 class MessageOutput(tk.Toplevel):
-    """Display a popup asking if the user wants to enter another bias"""
+    """Display a popup telling the user a message"""
     def __init__(self, parent, message):
         super().__init__(parent)
         self.parent = parent
@@ -140,22 +142,28 @@ class PieceBiasInput(tk.Toplevel):
         # Grabs the focus and puts it onto this child window
         self.grab_set()
 
-        # Variables to hold slider values
+        # Variables to hold slider and piece values
         self.confidence_var = tk.IntVar(value=0)
         self.strength_var = tk.IntVar(value=0)
+        self.bias_piece = tk.StringVar(value="Pawn")
 
         tk.Label(self, text="What piece is the opponent biased towards?").pack(padx=10, pady=5)
 
         # Entry box to type answers into
-        self.entry = tk.Entry(self, width=32)
-        self.entry.pack(padx=10, pady=5)
+        self.bias_choose = tk.OptionMenu(self, self.bias_piece, "Pawn", "Bishop", "Knight", "Rook", "Queen")
+        self.bias_choose.pack(padx=10, pady=5)
         
         # Labels and sliders for bias values
+       
         tk.Label(self, text="How confident are you in the opponents bias?").pack(padx=10, pady=5)
-        self.confidence_slider = tk.Scale(self, variable=self.confidence_var, from_=1, to=100, orient=tk.HORIZONTAL, length=198) # To match the length of the entry box, we are ocd
+        self.confidence_entry = tk.Entry(self, width=6, textvariable=self.confidence_var) # Entry box to type confidence value into
+        self.confidence_entry.pack(padx=10, pady=(5,0))
+        self.confidence_slider = tk.Scale(self, variable=self.confidence_var, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
         self.confidence_slider.pack(padx=10, pady=5)
         tk.Label(self, text="How strong would the opponents bias be?").pack(padx=10, pady=5)
-        self.strength_slider = tk.Scale(self, variable=self.strength_var, from_=1, to=100, orient=tk.HORIZONTAL, length=198)
+        self.strength_entry = tk.Entry(self, width=6, textvariable=self.strength_var) # Entry box to type strength value into
+        self.strength_entry.pack(padx=10, pady=(5,0))
+        self.strength_slider = tk.Scale(self, variable=self.strength_var, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
         self.strength_slider.pack(padx=10, pady=5)
 
         # OK and Cancel buttons
@@ -170,16 +178,19 @@ class PieceBiasInput(tk.Toplevel):
 
     def ok(self):
         # Store the results from the entry box and the two bias sliders
-        self.result = self.entry.get(), self.confidence_var.get(), self.strength_var.get()
+        self.result = self.bias_piece.get().lower(), self.confidence_var.get(), self.strength_var.get()
         self.close()
 
     def cancel(self):
         self.close()
         
     def close(self):
+        # Any Tk variables made inside this class need to be deleted when the gui closes as its not the mainloop
         del self.confidence_var
         del self.strength_var
+        del self.bias_piece
         self.destroy()
+        
         
 class BiasOutput(tk.Toplevel):
     """Display the captured pieces for both players."""

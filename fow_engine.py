@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 from pathlib import Path
+from math import comb
 
 
 class FoW_Engine1:
@@ -74,7 +75,8 @@ class FoW_Engine1:
                 analysis = self.engine.analyse(BSL.board_states[i[0]], chess.engine.Limit(depth=search_depth), multipv=max_guesses)
                 analyses.append(analysis)
             
-            scored_guesses = []
+            board_guesses = [[] for _ in range(min(len(PSA.board_scores), 5))]
+            below_scores = [0.0] * len(board_guesses)
             for i, analysis in enumerate(analyses):
                 board = BSL.board_states[PSA.board_scores[i][0]]
                 self.logger.log(board) # To help understand suggestions while testing DEBUG??? or not?
@@ -84,27 +86,47 @@ class FoW_Engine1:
                     stockfish_score = entry["score"].pov(board.turn).score(mate_score=10000)
                     adjusted_score = self.bias_scorer.move_bias_applicator(move, stockfish_score, board, vision_before_score)
                     self.logger.log(f"Move: {move}, Stockfish score: {stockfish_score} :: Adjusted Score: {adjusted_score}")
-                    scored_guesses.append((move, adjusted_score))
+                    board_guesses[i].append((move, adjusted_score))
                     #scored_guesses.append((move, stockfish_score)) # DEBUG: Use this line to see only stockfish scores without bias adjustments
             
+            # Iterpolate what the nth score would be using Finite Difference
+            if len(board_guesses[0]) >= max_guesses:
+                for i in range(max_guesses):
+                    c = comb(max_guesses, i)
+                    if (max_guesses -1 - i) % 2 != 0:
+                        c *= -1
+                    print(f"i = {i} : c = {c}")
+                    for j in range(len(below_scores)):
+                        print(f"score {board_guesses[j][i][1]}")
+                        print(f"c score {c * board_guesses[j][i][1]}")
+                        below_scores[j] += c * board_guesses[j][i][1]
+            print(below_scores)
+                    
+            scored_guesses = []
+            duplicates = [[False for move_guess in single_board_guesses] for single_board_guesses in board_guesses]
             # Remove duplicate moves from scored guesses
-            duplicate_indicies = []
-            combined_scored_guesses = []
-            for i in range(len(scored_guesses)):
-                if i in duplicate_indicies: continue
-                total_score = scored_guesses[i][1]
-                total_moves = 1
-                unique_move = scored_guesses[i][0]
-                for j in range(len(scored_guesses)):
-                    list_move = scored_guesses[j][0]
-                    if unique_move.from_square == list_move.from_square and unique_move.to_square == list_move.to_square:
-                        duplicate_indicies.append(j)
-                        total_score += scored_guesses[j][1]
-                        total_moves += 1
-                combined_scored_guesses.append((unique_move, round(total_score/ total_moves)))
+            for i in range(len(board_guesses)):
+                for j in range(len(board_guesses[i])):
+                    if duplicates[i][j] : continue
+                    total_score = board_guesses[i][j][1]
+                    unique_move = board_guesses[i][j][0]
+                    for k in range(len(board_guesses)):
+                        if k == i: continue
+                        match_found = False
+                        for h in range(len(board_guesses[k])):
+                            if duplicates[k][h] : continue
+                            list_move = board_guesses[k][h][0]
+                            if unique_move == list_move:
+                                duplicates[k][h] = True
+                                total_score += board_guesses[k][h][1]
+                                match_found = True
+                                break
+                        if not match_found:
+                            total_score += below_scores[k]
+                    scored_guesses.append((unique_move, round(total_score/ len(board_guesses[0]))))
+                    duplicates[i][j] = True
             
             # Sort and display the top moves
-            scored_guesses = combined_scored_guesses
             scored_guesses.sort(key=lambda x: x[1], reverse=True)
             self.logger.log("Suggested Moves for White:")
             for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
