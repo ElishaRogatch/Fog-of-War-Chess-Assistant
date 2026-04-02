@@ -89,31 +89,24 @@ class FoW_Engine1:
                     board_guesses[i].append((move, adjusted_score))
                     #scored_guesses.append((move, stockfish_score)) # DEBUG: Use this line to see only stockfish scores without bias adjustments
             
-            # Iterpolate what the nth score would be using Finite Difference
+            # Iterpolate what the nth score would be using linear regression # Improve interpolation scheme?
             if len(board_guesses[0]) >= max_guesses:
-                for i in range(max_guesses):
-                    c = comb(max_guesses, i)
-                    if (max_guesses -1 - i) % 2 != 0:
-                        c *= -1
-                    print(f"i = {i} : c = {c}")
-                    for j in range(len(below_scores)):
-                        print(f"score {board_guesses[j][i][1]}")
-                        print(f"c score {c * board_guesses[j][i][1]}")
-                        below_scores[j] += c * board_guesses[j][i][1]
-            print(below_scores)
+                for i in range(len(below_scores)):
+                    a,b = self.score_regression([move_score[1] for move_score in  board_guesses[i]])
+                    below_scores[i] = a + b * (max_guesses + 1)
                     
             scored_guesses = []
             duplicates = [[False for move_guess in single_board_guesses] for single_board_guesses in board_guesses]
             # Remove duplicate moves from scored guesses
-            for i in range(len(board_guesses)):
-                for j in range(len(board_guesses[i])):
+            for i in range(len(board_guesses)): # For each probable board's suggestions
+                for j in range(len(board_guesses[i])): # For a suggested move for one of the probable boards
                     if duplicates[i][j] : continue
                     total_score = board_guesses[i][j][1]
                     unique_move = board_guesses[i][j][0]
-                    for k in range(len(board_guesses)):
-                        if k == i: continue
+                    for k in range(len(board_guesses)): # Go through the other boards and look for a matching move in each board
+                        if k == i: continue # Do not check the current board
                         match_found = False
-                        for h in range(len(board_guesses[k])):
+                        for h in range(len(board_guesses[k])): # For each suggested move in another board
                             if duplicates[k][h] : continue
                             list_move = board_guesses[k][h][0]
                             if unique_move == list_move:
@@ -121,7 +114,7 @@ class FoW_Engine1:
                                 total_score += board_guesses[k][h][1]
                                 match_found = True
                                 break
-                        if not match_found:
+                        if not match_found: # If a matching move is not found for a board use the guessed next score as a guess for the move's score
                             total_score += below_scores[k]
                     scored_guesses.append((unique_move, round(total_score/ len(board_guesses[0]))))
                     duplicates[i][j] = True
@@ -156,6 +149,21 @@ class FoW_Engine1:
         
         finally:
             pass
+        
+    def score_regression(self, scores):
+        """Perform linear regresion on the scores to form an interpolating function"""
+        avg_index = len(scores) * (len(scores) + 1) / (2 * len(scores))
+        score_avg = sum(scores) / len(scores)
+        
+        b_num = 0
+        b_dem = 0
+        for i in range(1, len(scores)+1):
+            b_num += (i-avg_index) * (scores[i-1]-score_avg)
+            b_dem += (i-avg_index) ** 2
+        
+        b = b_num / b_dem
+        a = score_avg - b*avg_index
+        return a,b
         
 
         

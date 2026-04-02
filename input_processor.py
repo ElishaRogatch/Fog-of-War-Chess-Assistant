@@ -22,7 +22,6 @@ class InputProcessor:
             self.logger.log(f"User input:{input_value}, {coefficient}")
             self.format_bias(input_value, confidence, strength, coefficient, biases, bias_values)
         self.bias_display.close()
-        print("THis is the dictionary")
         return biases
                 
 
@@ -35,8 +34,6 @@ class InputProcessor:
                     if YesNoInput(self.root, "An entered bias parameter is 0.\nWould you like to remove it?").result:
                         del biases[user_input]
                         del bias_values[user_input]
-                        print("THis is the dictionary")
-                        print(biases)
                 elif YesNoInput(self.root, "Entered bias already exists.\nWould you like to replace it?").result:
                     biases[user_input] = coefficient
                     bias_values[user_input] = (confidence, strength)
@@ -46,8 +43,6 @@ class InputProcessor:
                 else:
                     biases[user_input] = coefficient
                     bias_values[user_input] = (confidence, strength)
-                    print("THis is the dictionary")
-                    print(biases)
             #update bias gui list
             self.bias_display.add_bias(bias_values)
         else:
