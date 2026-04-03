@@ -1,4 +1,5 @@
 from tkinter import messagebox
+import tkinter as tk
 import chess
 
 class GameOver: 
@@ -27,19 +28,49 @@ class GameOver:
 
     def check_game_over(self):
         """Check if the game is over."""
-        game_outcome = self.board.outcome()
+        game_outcome : chess.Outcome = self.board.outcome() 
         if game_outcome is not None: # Check all game over conditions
             if game_outcome.termination == chess.Termination.VARIANT_LOSS:
                 winner = "White" if game_outcome.winner else "Black"
-                messagebox.showinfo("King Captured", f"{winner} wins!")
+                GameOverOutput(self.root, f"(not winner) king captured: {winner} wins!") # TODO Fix this so that it works with names and is actually th opposite
                 self.quit_game()
                 return True
             elif game_outcome.termination == chess.Termination.FIFTY_MOVES:
-                messagebox.showinfo("50 Move Rule", "It's a draw!")
+                GameOverOutput(self.root, "By 50 move rule it's a draw!")
                 self.quit_game()
                 return True
             elif game_outcome.termination == chess.Termination.THREEFOLD_REPETITION:
-                messagebox.showinfo("Threefold Repetition", "It's a draw!")
+                messagebox.showinfo(self.root, "By threefold repetition it's a draw!")
                 self.quit_game()
                 return True
         return False
+    
+class GameOverOutput(tk.Toplevel):
+    """Display the game result."""
+    def __init__(self, parent, message):
+        super().__init__(parent)
+        self.parent = parent
+        self.iconbitmap("images/icons/Endgame.ico")
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.minsize(200, 150)
+        self.title("Game Over")
+        
+    # Makes this popup window behave like a dependent child of the parent
+        self.transient(parent)
+        # Grabs the focus and puts it onto this child window
+        self.grab_set()
+
+        tk.Label(self, text=message, wraplength=280).pack(padx=50, pady=5)
+
+        # OK button
+        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM, padx=10, pady=5)
+        
+        # Pauses code until answered
+        self.wait_window(self)
+
+
+    def ok(self):
+        self.close()
+       
+    def close(self):
+        self.destroy()
