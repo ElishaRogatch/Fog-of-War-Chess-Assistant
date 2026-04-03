@@ -5,9 +5,14 @@ import fow_chess
 from probable_state_analyzer import ProbableStateAnalyzer
 from board_state_limiter import BoardStateLimiter
 
-class PredictionWindow:
-    def __init__(self, root, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter, main_board: fow_chess.FowBoard):
+class PredictionWindow(tk.Toplevel):
+    def __init__(self, parent, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter, main_board: fow_chess.FowBoard):
         """Initialize the prediction window."""
+        super().__init__(parent)
+        self.parent = parent
+        self.title("Opponent Move Predictions")
+        self.iconbitmap("images/icons/FOW.ico")
+        
         # Store references to the PSA and BSL for accessing predictions and board states
         self.PSA = PSA
         self.BSL = BSL
@@ -17,19 +22,15 @@ class PredictionWindow:
         self.board_size = 8
         self.square_size = 64  # Size of each square in pixels
 
-        # Create a new Toplevel window for predictions
-        self.prediction_window_root = tk.Toplevel(root)
-        self.prediction_window_root.title("Opponent Move Predictions")
-        self.prediction_window_root.iconbitmap("images/icons/FOW.ico")
 
         # Create a canvas to display predictions 
-        self.canvas = tk.Canvas(self.prediction_window_root, width=self.board_size * self.square_size, height=self.board_size * self.square_size)
+        self.canvas = tk.Canvas(self, width=self.board_size * self.square_size, height=self.board_size * self.square_size)
         
         # Global variable to track visibility of the prediction window
         self.isVisible = False
 
         # Frame to hold the buttons for switching predictions
-        self.button_frame = tk.Frame(self.prediction_window_root)
+        self.button_frame = tk.Frame(self)
         self.button_frame.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Lists to store button objects and images 
@@ -74,7 +75,7 @@ class PredictionWindow:
         #self.prediction_board = fow_chess.FowBoard() # This will be updated with the predicted board state (DO WE NEED THIS ?? Answer: Not really as we update the board stored inside the DrawBoard instance, updating this does not update the drawn board)
         self.compiled_prediction_board = fow_chess.FowBoard() # This will be updated with the compiled prediction and piece vision toggles
         self.compiled_prediction_board_copy = self.compiled_prediction_board.copy() # Copy for safe modification when updating the compiled prediction based on piece vision toggles
-        self.prediction_board_draw = DrawBoard(self.prediction_window_root, fow_chess.FowBoard(), self.board_size, self.square_size, self.canvas)
+        self.prediction_board_draw = DrawBoard(self, fow_chess.FowBoard(), self.board_size, self.square_size, self.canvas)
         self.prediction_board_draw.set_prediction_window(self) # Pass the prediction window instance to the board draw class
         self.create_compiled_prediction() # Create the initial compiled prediction based on the initial predictions from the PSA and the current piece vision toggles (which are all off at the start)
 
@@ -180,9 +181,9 @@ class PredictionWindow:
     def toggle(self):
         """Toggle the visibility of the prediction window."""
         if self.isVisible:
-            self.prediction_window_root.withdraw()  # Hide the window
+            self.withdraw()  # Hide the window
         else:
-            self.prediction_window_root.deiconify()  # Show the window
+            self.deiconify()  # Show the window
 
         self.isVisible = not self.isVisible # Flip the boolean value for next toggle
 
