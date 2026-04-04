@@ -1,17 +1,21 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fow_logger import FowLogger
+
 import tkinter as tk
 
 class InputProcessor:
-    def __init__(self, root, logger):
+    def __init__(self, root, logger: FowLogger):
         self.root = root
-        #self.enter_bias = tk.BooleanVar(self.root, value=True)
         self.logger = logger
         self.bias_display = BiasOutput(self.root)
     
-    def bias(self):
+    def bias(self) -> dict[str, float]:
         """Process user input to identify bias type."""
         input_value = "" 
-        biases = {}
-        bias_values = {}
+        biases: dict[str, float] = {}
+        bias_values: dict[str, tuple[int, int]] = {}
         while True:
             if not YesNoInput(self.root, "Would you like to enter a bias?").result:
                 break
@@ -25,7 +29,7 @@ class InputProcessor:
         return biases
                 
 
-    def format_bias(self, user_input, confidence, strength, coefficient, biases, bias_values): 
+    def format_bias(self, user_input: str, confidence: int, strength: int, coefficient: float, biases: dict[str, float], bias_values: dict[str, tuple[int, int]]): 
         """Takes base user input and converts it to the formatted bias"""
         #TODO change bias to allow for openings as well as pieces
         if user_input:
@@ -130,7 +134,7 @@ class PieceBiasInput(tk.Toplevel):
         self.iconbitmap("images/icons/Bias.ico")
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.title("Bias Input")
-        self.result = None, 0, 0
+        self.result = "", 0, 0
         
         # Makes this popup window behave like a dependent child of the parent
         self.transient(parent)

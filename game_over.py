@@ -1,18 +1,23 @@
-from tkinter import messagebox
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fow_chess import FowBoard
+    from fow_logger import FowLogger
+    from fow_engine import FowEngine
+
 import tkinter as tk
 import chess
 
 class GameOver: 
-    def __init__(self, root, board, logger):
+    def __init__(self, root, board: FowBoard, logger: FowLogger):
         self.root = root
         self.board = board
-        self.engine = None
         self.logger = logger
         
-    def assign_engine(self, engine):
+    def assign_engine(self, engine: FowEngine):
         self.engine = engine
         
-    def assign_wait_lock(self, wait_lock):
+    def assign_wait_lock(self, wait_lock: tk.IntVar):
         self.wait_lock = wait_lock
 
     def quit_game(self):
@@ -28,24 +33,24 @@ class GameOver:
 
     def check_game_over(self):
         """Check if the game is over."""
-        game_outcome : chess.Outcome = self.board.outcome() 
+        game_outcome: chess.Outcome = self.board.outcome() 
         if game_outcome is not None: # Check all game over conditions
             if game_outcome.termination == chess.Termination.VARIANT_LOSS:
                 winner = "White" if game_outcome.winner else "Black"
-                GameOverOutput(self.root, f"(not winner) king captured: {winner} wins!") # TODO Fix this so that it works with names and is actually th opposite
+                EndGameOutput(self.root, f"(not winner) king captured: {winner} wins!") # TODO Fix this so that it works with names and is actually th opposite
                 self.quit_game()
                 return True
             elif game_outcome.termination == chess.Termination.FIFTY_MOVES:
-                GameOverOutput(self.root, "By 50 move rule it's a draw!")
+                EndGameOutput(self.root, "By 50 move rule it's a draw!")
                 self.quit_game()
                 return True
             elif game_outcome.termination == chess.Termination.THREEFOLD_REPETITION:
-                messagebox.showinfo(self.root, "By threefold repetition it's a draw!")
+                EndGameOutput(self.root, "By threefold repetition it's a draw!")
                 self.quit_game()
                 return True
         return False
     
-class GameOverOutput(tk.Toplevel):
+class EndGameOutput(tk.Toplevel):
     """Display the game result."""
     def __init__(self, parent, message):
         super().__init__(parent)

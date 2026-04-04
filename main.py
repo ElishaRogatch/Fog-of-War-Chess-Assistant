@@ -1,10 +1,11 @@
 import tkinter as tk
 import fow_chess
-from fow_engine import FoW_Engine1
+from fow_engine import FowEngine
 from input_processor import InputProcessor
 from board_draw import DrawBoard
 from play_game import PlayGame
 from game_over import GameOver
+from fow_logger import FowLogger
 
 
 class ChessGUI:
@@ -40,8 +41,8 @@ class ChessGUI:
         # Initialize GameOver
         self.game_over = GameOver(self.root, self.board, self.logger)
 
-        # Create an instance of FoW_Engine1
-        self.engine = FoW_Engine1(self.root, self.board, self.biases, self.game_over, self.logger)
+        # Create an instance of FowEngine
+        self.engine = FowEngine(self.root, self.board, self.biases, self.game_over, self.logger)
         self.game_over.assign_engine(self.engine)
 
         # Make instance of PlayGame
@@ -75,18 +76,12 @@ class ChessGUI:
         # Makes it so that X-ing out of the application leaves the game
         self.root.protocol("WM_DELETE_WINDOW", self.game_over.quit_game)
 
-        # Create a button to print the moves made in the game **DEBUG feature old**
-        # self.move_list = []
-        # print_moves_button = tk.Button(self.root, text="Print Move History", command=self.database.print_moves)
-        # print_moves_button.pack(side=tk.LEFT)
-
         # Draw the inital fog
         self.board_draw.draw_fog()
         
         # Start the chess engine
         self.engine.start_engine()
-    
-
+        
 class CapturedOutput(tk.Toplevel):
     """Display the captured pieces for both players."""
     def __init__(self, parent, captured_pieces):
@@ -114,22 +109,6 @@ class CapturedOutput(tk.Toplevel):
     def close(self):
         self.destroy()
         
-
-class FowLogger:
-    def __init__(self):
-        self.log("Game started")
-        #with open("gamelog.txt", 'w') as logfile:
-        #    logfile.write("")
-        pass
-    
-    def log(self, message):
-        with open("gamelog.txt", 'a') as logfile:
-            print(message)
-            print(message, file = logfile)
-            
-    def clear_log():
-        with open("gamelog.txt", 'w') as logfile:
-            logfile.write("")
 
 
 if __name__ == "__main__":

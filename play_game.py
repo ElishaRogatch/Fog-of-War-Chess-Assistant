@@ -1,3 +1,11 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fow_chess import FowBoard
+    from board_draw import DrawBoard
+    from game_over import GameOver
+    from fow_engine import FowEngine
+
 import chess
 import tkinter as tk
 from board_state_limiter import BoardStateLimiter
@@ -5,7 +13,18 @@ from probable_state_analyzer import ProbableStateAnalyzer
 import copy
 
 class PlayGame:
-    def __init__(self, root, board, canvas, square_size, assisted_player, board_draw, game_over, engine, biases, logger):
+    def __init__(
+        self, 
+        root, 
+        board: FowBoard, 
+        canvas: tk.Canvas, 
+        square_size: int, 
+        assisted_player: chess.Color, 
+        board_draw: DrawBoard, 
+        game_over: GameOver, 
+        engine: FowEngine, 
+        biases: dict[str, float], 
+        logger):
         """Initialize game state and GUI elements."""
         self.root = root
         self.board = board
@@ -19,7 +38,7 @@ class PlayGame:
         self.logger = logger
 
         # Track selected square and moves
-        self.selected_square = None
+        self.selected_square: chess.Square | None = None
         
         # Create instance of board state limiter and probable state analyzer
         self.BSL = BoardStateLimiter(self.board, [copy.deepcopy(self.board)])
@@ -70,9 +89,7 @@ class PlayGame:
         clicked_square = chess.square(col, row) # placed here so that it is storing the current player's moves and not the next player
 
         # Clear existing move dots when clicking a new square
-        for dot in self.board_draw.move_dots:
-            self.canvas.delete(dot)
-        self.board_draw.move_dots = []
+        self.board_draw.clear_dots()
 
         if self.selected_square is None:
             # Select the piece if any
@@ -83,7 +100,7 @@ class PlayGame:
                 self.board_draw.show_possible_moves(clicked_square)
         else:
             # Try to make a move with promotion if applicable
-            if (str(self.board.piece_at(self.selected_square)).upper()=='P' and (clicked_square >= 56 or clicked_square <= 7)):
+            if (self.board.piece_type_at(self.selected_square) == chess.PAWN and (clicked_square >= 56 or clicked_square <= 7)): # Make sure pawn is on backrank
                 move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
                 ask_promotion = True
             else:
@@ -106,6 +123,10 @@ class PlayGame:
                         move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
                 captured_piece = self.board.piece_at(clicked_square)
                 if captured_piece: # if captured_piece is not None
+                    print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
+                    self.captured_pieces.append(captured_piece.symbol())
+                elif self.board.is_en_passant(move):
+                    captured_piece = self.board.piece_at(chess.square(chess.square_file(clicked_square), chess.square_rank(self.selected_square)))
                     print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
                     self.captured_pieces.append(captured_piece.symbol())
                 # Update the board with the move
@@ -148,7 +169,7 @@ class PlayGame:
                         if self.wait_lock.get() != 2:
                             self.root.wait_variable(self.wait_lock)
                             self.wait_lock.set(0) # False
-                        self.canvas.delete("cover")
+                        self.board_draw.clear_cover
                         self.canvas.bind("<Button-1>", self.on_square_click)
                         self.update_turn_label()
                 else:
@@ -164,7 +185,7 @@ class PlayGame:
     
 class PromotionInput(tk.Toplevel):
     """Prompt user to select a piece for pawn promotion."""
-    def __init__(self, parent, promotion_piece):
+    def __init__(self, parent, promotion_piece: tk.StringVar):
         super().__init__(parent)
         self.parent = parent
         self.iconbitmap("images/icons/Promotion.ico")
@@ -172,7 +193,7 @@ class PromotionInput(tk.Toplevel):
         self.minsize(0, 150)
         self.title("Pawn Promotion")
         
-    # Makes this popup window behave like a dependent child of the parent
+        # Makes this popup window behave like a dependent child of the parent
         self.transient(parent)
         # Grabs the focus and puts it onto this child window
         self.grab_set()

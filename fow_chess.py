@@ -40,7 +40,7 @@ class FowBoard(Board):
     def __init__(self,*args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.stored_transposition_key = None
-        self.last_piece_moved = None
+        self.last_piece_moved : list[PieceType] = []
         
     @property
     def fow_legal_moves(self) -> LegalFowMoveGenerator:
@@ -303,7 +303,7 @@ class FowBoard(Board):
             double_moves = double_moves & ~(single_moves >> 8) & ~(self.occupied >> 8)
         return attack_moves | single_moves | double_moves
         
-    def get_ep_visibility(self, visible) -> Bitboard:
+    def get_ep_visibility(self, visible: Bitboard) -> Bitboard:
         """Gets the ep visibility mask for the player to move."""
         ep_visible = BB_EMPTY
         if self.ep_square and visible & BB_SQUARES[self.ep_square]:
