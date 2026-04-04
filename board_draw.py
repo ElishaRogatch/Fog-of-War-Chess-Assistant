@@ -139,7 +139,7 @@ class DrawBoard:
             self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, image=image, tags="fog")
 
         # Ep pieces (En-Passant target pieces)
-        for square in chess.scan_forward(self.board.get_ep_visibility(visibility)): 
+        for square in chess.scan_forward(self.board.get_ep_visibility()): 
             col = square % 8
             row = (square-col) / 8 
             image = self.piece_images[f"{'b' if self.board.turn else 'w'}p"]

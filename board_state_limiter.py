@@ -66,7 +66,7 @@ class BoardStateLimiter:
      
     def _remove_contradicting_states(self, boardstates: list[FowBoard]) -> list[FowBoard]:
         visible: Bitboard = self.board.get_fow_visibility()
-        visible = visible | self.board.get_ep_visibility(visible)
+        visible = visible | self.board.get_ep_visibility()
         semi_visible: Bitboard = self.board.get_semi_visibility(visible)
         # remove any states that contradict visible observations
         return [boardstate for boardstate in boardstates if self._does_match_visibility(self.board, boardstate, visible, semi_visible)]
