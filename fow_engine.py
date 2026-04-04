@@ -122,7 +122,7 @@ class FowEngine:
                             break
                     if not match_found: # If a matching move is not found for a board use the guessed next score as a guess for the move's score
                         total_score += below_scores[k]
-                scored_guesses.append((unique_move, score_round(total_score / len(board_guesses[0]))))
+                scored_guesses.append((unique_move, score_round(total_score / len(board_guesses))))
                 duplicates[i][j] = True
         
         # Sort and display the top moves

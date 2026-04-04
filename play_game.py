@@ -124,11 +124,11 @@ class PlayGame:
                 captured_piece = self.board.piece_at(clicked_square)
                 if captured_piece: # if captured_piece is not None
                     print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
-                    self.captured_pieces.append(captured_piece.symbol())
+                    self.captured_pieces.append(chess.UNICODE_PIECE_SYMBOLS[captured_piece.symbol()])
                 elif self.board.is_en_passant(move):
                     captured_piece = self.board.piece_at(chess.square(chess.square_file(clicked_square), chess.square_rank(self.selected_square)))
                     print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
-                    self.captured_pieces.append(captured_piece.symbol())
+                    self.captured_pieces.append(chess.UNICODE_PIECE_SYMBOLS[captured_piece.symbol()])
                 # Update the board with the move
                 self.board.push(move)
                 # Check for game-ending conditions

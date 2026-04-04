@@ -97,7 +97,7 @@ class CapturedOutput(tk.Toplevel):
         # Grabs the focus and puts it onto this child window
         self.grab_set()
 
-        tk.Label(self, text=captured_pieces, wraplength=280).pack(padx=50, pady=5)
+        tk.Label(self, text=captured_pieces, font=("TkDefaultFont", 30), wraplength=280).pack(padx=50, pady=5)
 
         # OK button
         tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM, padx=10, pady=5)
