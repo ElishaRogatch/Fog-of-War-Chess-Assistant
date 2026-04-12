@@ -1,6 +1,5 @@
 class FowLogger:
     def __init__(self):
-        self.log("Game started")
         #with open("gamelog.txt", 'w') as logfile:
         #    logfile.write("")
         pass

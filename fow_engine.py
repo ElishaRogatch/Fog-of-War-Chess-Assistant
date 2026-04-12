@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from fow_logger import FowLogger
     from board_state_limiter import BoardStateLimiter
     from probable_state_analyzer import ProbableStateAnalyzer
+    from game_settings import GameSettings
 
 import chess
 import chess.engine
@@ -17,15 +18,17 @@ from tkinter import filedialog
 import os
 from pathlib import Path
 from utils import score_round
+from gui_io import MessageOutput
 MoveScore = tuple[chess.Move, int]
 
 class FowEngine:
-    def __init__(self, root, board: FowBoard, biases: dict[str, float], game_over: GameOver, logger: FowLogger):
+    def __init__(self, root, board: FowBoard, biases: dict[str, float], game_over: GameOver, logger: FowLogger, settings: GameSettings):
         self.root = root
         self.board = board
         self.bias_scorer = BiasScorer(biases)
         self.game_over = game_over
         self.logger = logger
+        self.settings = settings
 
     def start_engine(self):
         """Run the FOW engine to generate a move"""
@@ -74,11 +77,11 @@ class FowEngine:
         analyses: list[list[InfoDict]] = []
         for i in PSA.board_scores[:5]:
             if len(PSA.board_scores) >= 4:
-                search_depth = 10
+                search_depth = self.settings.search_depth # TODO maybe add a dictionary and test to see how much we can get away with for timing? and re do for 1-5?
             elif len(PSA.board_scores) >= 2:
-                search_depth = 12
+                search_depth = self.settings.search_depth + 2
             else: # Length is 1
-                search_depth = 15
+                search_depth = self.settings.search_depth + 5
             analysis = self.engine.analyse(BSL.board_states[i[0]], chess.engine.Limit(depth=search_depth), multipv=max_guesses)
             analyses.append(analysis)
         
@@ -130,7 +133,7 @@ class FowEngine:
         self.logger.log("Suggested Moves for White:")
         for i, (move, score) in enumerate(scored_guesses[:max_guesses]):
             self.logger.log(f"{i + 1}. Move: {move}, Score: {score}")
-        SuggestionOutput(self.root, scored_guesses)
+        self.suggestion_message(scored_guesses, max_guesses)
             
     def board_state_analysis(self, board: FowBoard) -> int:
         """Analyze the board state and return Stockfish score."""
@@ -152,32 +155,15 @@ class FowEngine:
         b = b_num / b_dem
         a = score_avg - b*avg_index
         return a,b
-        
-
-        
-class SuggestionOutput(tk.Toplevel):
-    """Display a popup with the top move suggestions and their scores."""
-    def __init__(self, parent, scored_guesses: list[MoveScore]):
-        super().__init__(parent)
-        self.parent = parent
-        self.iconbitmap("images/icons/Suggester.ico")
-        self.protocol("WM_DELETE_WINDOW", self.close)
-        self.minsize(0, 100)
-        self.title("Top 5 Move Suggestions and Scores")
-        
-    # Makes this popup window behave like a dependent child of the parent
-        self.transient(parent)
-        # Grabs the focus and puts it onto this child window
-        self.grab_set()
-
-        tk.Label(self, text=scored_guesses[:5], wraplength=380).pack(padx=10, pady=5)
-
-        # OK button
-        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM,padx=10, pady=5)
-
-
-    def ok(self):
-        self.close()
-       
-    def close(self):
-        self.destroy()
+    
+    def suggestion_message(self, scored_guesses: list[MoveScore], suggestion_count):
+        """Display a popup with the top move suggestions and their scores."""
+        suggestion = "".join(f"{movescore[0].uci()} : {movescore[1]}\n" for movescore in scored_guesses[:suggestion_count])
+        return MessageOutput(
+            parent=self.root,
+            message=suggestion,
+            title="Top 5 Move Suggestions and Scores",
+            icon_path="images/icons/Suggester.ico",
+            wrap_length=380,
+            min_size=(150,100)
+        )

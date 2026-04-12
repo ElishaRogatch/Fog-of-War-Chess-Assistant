@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from fow_logger import FowLogger
 
 import tkinter as tk
+from gui_io import YesNoIO, MessageOutput
 
 class InputProcessor:
     def __init__(self, root, logger: FowLogger):
@@ -17,7 +18,7 @@ class InputProcessor:
         biases: dict[str, float] = {}
         bias_values: dict[str, tuple[int, int]] = {}
         while True:
-            if not YesNoInput(self.root, "Would you like to enter a bias?").result:
+            if not self.bias_yes_no("Would you like to enter a bias?").result:
                 break
             #ask user for type of bias
             input_value, confidence, strength = PieceBiasInput(self.root).result
@@ -35,104 +36,48 @@ class InputProcessor:
         if user_input:
             if user_input in biases:
                 if coefficient == 0:
-                    if YesNoInput(self.root, "An entered bias parameter is 0.\nWould you like to remove it?").result:
+                    if self.bias_yes_no("An entered bias parameter is 0.\nWould you like to remove it?").result:
                         del biases[user_input]
                         del bias_values[user_input]
-                elif YesNoInput(self.root, "Entered bias already exists.\nWould you like to replace it?").result:
+                elif self.bias_yes_no("Entered bias already exists.\nWould you like to replace it?").result:
                     biases[user_input] = coefficient
                     bias_values[user_input] = (confidence, strength)
             else:
                 if coefficient == 0:
-                    MessageOutput(self.root, "An entered bias parameter is 0.\nBias will not be added")
+                    self.bias_message("An entered bias parameter is 0.\nBias will not be added")
                 else:
                     biases[user_input] = coefficient
                     bias_values[user_input] = (confidence, strength)
             #update bias gui list
             self.bias_display.add_bias(bias_values)
         else:
-            MessageOutput(self.root, "No input provided!")
-    
- 
- 
-class MessageOutput(tk.Toplevel):
-    """Display a popup telling the user a message"""
-    def __init__(self, parent, message):
-        super().__init__(parent)
-        self.parent = parent
-        self.iconbitmap("images/icons/Bias.ico")
-        self.protocol("WM_DELETE_WINDOW", self.close)
-        self.minsize(200, 100)
-        self.title("Bias Input")
+            self.bias_message("No input provided!")
+            
+    def bias_message(self, message_to_show):
+        return MessageOutput(
+            parent=self.root,
+            message=message_to_show,
+            title="Bias Input",
+            icon_path="images/icons/Bias.ico",
+            min_size=(200,100), 
+            label_padding=(30,15)
+        )
+            
+    def bias_yes_no(self, question_to_ask):
+        return YesNoIO(
+            parent=self.root, 
+            question=question_to_ask, 
+            title="Bias Input",
+            icon_path="images/icons/Bias.ico"
+        )
         
-    # Makes this popup window behave like a dependent child of the parent
-        self.transient(parent)
-        # Grabs the focus and puts it onto this child window
-        self.grab_set()
-
-        tk.Label(self, text=message).pack(padx=30, pady=(15,15))
-
-        # OK button
-        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM, padx=10, pady=5)
-
-        # Pauses code until answered
-        self.wait_window(self)
-
-
-    def ok(self):
-        # Store the results from the entry box and the two bias sliders
-        self.close()
-        
-    def close(self):
-        self.destroy()
- 
- 
-        
-class YesNoInput(tk.Toplevel):
-    """Display a popup asking if the user wants to enter another bias"""
-    def __init__(self, parent, question):
-        super().__init__(parent)
-        self.parent = parent
-        self.iconbitmap("images/icons/Bias.ico")
-        self.protocol("WM_DELETE_WINDOW", self.close)
-        self.title("Bias Input")
-        self.result = False
-        
-    # Makes this popup window behave like a dependent child of the parent
-        self.transient(parent)
-        # Grabs the focus and puts it onto this child window
-        self.grab_set()
-
-        tk.Label(self, text=question).pack(padx=30, pady=(15,15))
-
-        # Yes and No buttons
-        button_frame = tk.Frame(self)
-        tk.Button(button_frame, text="Yes", command=self.yes).pack(side=tk.LEFT, padx=10, pady=5)
-        tk.Button(button_frame, text="No", command=self.no).pack(side=tk.RIGHT, padx=10, pady=5)
-        button_frame.pack(padx=10, pady=(15,15))
-
-        # Pauses code until answered
-        self.wait_window(self)
-
-
-    def yes(self):
-        # Store the results from the entry box and the two bias sliders
-        self.result = True
-        self.close()
-
-    def no(self):
-        self.close() # Result is already False by default
-        
-    def close(self):
-        self.destroy()
-    
-
 
 class PieceBiasInput(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.iconbitmap("images/icons/Bias.ico")
-        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.title("Bias Input")
         self.result = "", 0, 0
         

@@ -5,6 +5,8 @@ if TYPE_CHECKING:
     from board_draw import DrawBoard
     from game_over import GameOver
     from fow_engine import FowEngine
+    from fow_logger import FowLogger
+    from game_settings import GameSettings
 
 import chess
 import tkinter as tk
@@ -24,7 +26,10 @@ class PlayGame:
         game_over: GameOver, 
         engine: FowEngine, 
         biases: dict[str, float], 
-        logger):
+        logger: FowLogger,
+        names: list[str],
+        settings: GameSettings
+    ):
         """Initialize game state and GUI elements."""
         self.root = root
         self.board = board
@@ -36,6 +41,8 @@ class PlayGame:
         self.engine = engine
         self.biases = biases
         self.logger = logger
+        self.names = names
+        self.settings = settings
 
         # Track selected square and moves
         self.selected_square: chess.Square | None = None
@@ -45,11 +52,12 @@ class PlayGame:
         self.PSA = ProbableStateAnalyzer(self.BSL, self.engine, self.biases)
         
         # Initialized buttons
-        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA))
+        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA, self.settings.suggested_moves_count))
         self.transition_sides_button = tk.Button(self.root, text="Player Transition Toggle", command= lambda: self.update_transition_sides_state())
         
         # Player label
-        self.turn_label = tk.Label(self.root, text="White's Turn", font=16)
+        self.turn_label = tk.Label(self.root, text="", font=16)
+        self.update_turn_label()
         self.turn_label.pack()
         
         # List of captured pieces
@@ -78,8 +86,7 @@ class PlayGame:
 
     def update_turn_label(self):
         """Updates the turn label to show whose turn it is."""
-        current_turn = "White's Turn" if self.board.turn else "Black's Turn"
-        self.turn_label.config(text=current_turn)
+        self.turn_label.config(text=f"{self.names[self.board.turn]}'s Turn")
         
     def on_square_click(self, event):
         """Handle click events to select and move pieces."""
@@ -108,7 +115,7 @@ class PlayGame:
                 move = chess.Move(self.selected_square, clicked_square)
                 ask_promotion = False
             if move in self.board.fow_legal_moves:
-                self.logger.log(f"{chess.COLOR_NAMES[self.board.turn]} makes the move {move.uci()}")
+                self.logger.log(f"{self.names[self.board.turn]} makes the move {move.uci()}")
                 if ask_promotion:
                     # Have user choose promotion piece
                     promotion_piece = tk.StringVar(value="Queen")
@@ -169,7 +176,7 @@ class PlayGame:
                         if self.wait_lock.get() != 2:
                             self.root.wait_variable(self.wait_lock)
                             self.wait_lock.set(0) # False
-                        self.board_draw.clear_cover
+                        self.board_draw.clear_cover()
                         self.canvas.bind("<Button-1>", self.on_square_click)
                         self.update_turn_label()
                 else:

@@ -7,12 +7,14 @@ if TYPE_CHECKING:
 
 import tkinter as tk
 import chess
+from gui_io import MessageOutput
 
 class GameOver: 
-    def __init__(self, root, board: FowBoard, logger: FowLogger):
+    def __init__(self, root, board: FowBoard, logger: FowLogger, names: list[str]):
         self.root = root
         self.board = board
         self.logger = logger
+        self.names = names
         
     def assign_engine(self, engine: FowEngine):
         self.engine = engine
@@ -36,46 +38,26 @@ class GameOver:
         game_outcome: chess.Outcome = self.board.outcome() 
         if game_outcome is not None: # Check all game over conditions
             if game_outcome.termination == chess.Termination.VARIANT_LOSS:
-                winner = "White" if game_outcome.winner else "Black"
-                EndGameOutput(self.root, f"(not winner) king captured: {winner} wins!") # TODO Fix this so that it works with names and is actually th opposite
+                self.game_over_message(f"{self.names[not game_outcome.winner]}'s king captured: {self.names[game_outcome.winner]} wins!")
                 self.quit_game()
                 return True
             elif game_outcome.termination == chess.Termination.FIFTY_MOVES:
-                EndGameOutput(self.root, "By 50 move rule it's a draw!")
+                self.game_over_message("By 50 move rule it's a draw!")
                 self.quit_game()
                 return True
             elif game_outcome.termination == chess.Termination.THREEFOLD_REPETITION:
-                EndGameOutput(self.root, "By threefold repetition it's a draw!")
+                self.game_over_message("By threefold repetition it's a draw!")
                 self.quit_game()
                 return True
         return False
     
-class EndGameOutput(tk.Toplevel):
-    """Display the game result."""
-    def __init__(self, parent, message):
-        super().__init__(parent)
-        self.parent = parent
-        self.iconbitmap("images/icons/Endgame.ico")
-        self.protocol("WM_DELETE_WINDOW", self.close)
-        self.minsize(200, 150)
-        self.title("Game Over")
-        
-    # Makes this popup window behave like a dependent child of the parent
-        self.transient(parent)
-        # Grabs the focus and puts it onto this child window
-        self.grab_set()
-
-        tk.Label(self, text=message, wraplength=280).pack(padx=50, pady=5)
-
-        # OK button
-        tk.Button(self, text="OK", command=self.ok).pack(side=tk.BOTTOM, padx=10, pady=5)
-        
-        # Pauses code until answered
-        self.wait_window(self)
-
-
-    def ok(self):
-        self.close()
-       
-    def close(self):
-        self.destroy()
+    def game_over_message(self, message_to_show):
+        """Display the game result."""
+        return MessageOutput(
+            parent=self.root,
+            message=message_to_show,
+            title="Game Over",
+            icon_path="images/icons/Endgame.ico",
+            wrap_length=280,
+            label_padding=(50,5)
+        )
