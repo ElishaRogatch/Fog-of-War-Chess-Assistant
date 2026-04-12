@@ -32,6 +32,10 @@ class GameOver:
         # Close the GUI window
         self.root.destroy()
         self.logger.log("Game ended")
+        
+    def force_quit_game(self):
+        self.logger.log("Game terminated by user.")
+        self.quit_game()
 
     def check_game_over(self):
         """Check if the game is over."""

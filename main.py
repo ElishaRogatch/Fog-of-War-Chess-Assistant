@@ -42,7 +42,7 @@ class ChessGUI:
         self.names = names # Names in list are black then white so that it can be accesed through the turn property
 
         # Makes instance of FowLogger
-        self.logger = FowLogger()
+        self.logger = FowLogger(self.settings)
         self.logger.log(f"Game started between {names[1]} and {names[0]}")
 
         # Makes instance of DrawBoard
@@ -84,11 +84,11 @@ class ChessGUI:
         # print_button.pack(side=tk.LEFT)
 
         # Makes it so you can hit Escape to leave the game
-        self.root.bind("<Escape>", lambda event: self.game_over.quit_game())
+        self.root.bind("<Escape>", lambda event: self.game_over.force_quit_gamequit_game())
         self.root.bind("<Return>", lambda event : self.play_game.wait_lock.set(1)) # True
 
         # Makes it so that X-ing out of the application leaves the game
-        self.root.protocol("WM_DELETE_WINDOW", self.game_over.quit_game)
+        self.root.protocol("WM_DELETE_WINDOW", self.game_over.force_quit_game)
 
         # Draw the inital fog
         self.board_draw.draw_fog()

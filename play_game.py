@@ -116,6 +116,7 @@ class PlayGame:
                 ask_promotion = False
             if move in self.board.fow_legal_moves:
                 self.logger.log(f"{self.names[self.board.turn]} makes the move {move.uci()}")
+                self.logger.just_log(self.board)
                 if ask_promotion:
                     # Have user choose promotion piece
                     promotion_piece = tk.StringVar(value="Queen")
