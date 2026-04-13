@@ -42,9 +42,10 @@ class PlayGame:
         self.wait_lock = tk.IntVar(root, value= 0) # False
         self.game_over.assign_wait_lock(self.wait_lock)
 
-    def set_prediction_window(self, prediction_window: PredictionWindow):
+    def set_prediction_window(self, prediction_window: PredictionWindow, toggle_predictions_button: tk.Button):
         """Set the prediction window instance for this class."""
         self.prediction_window = prediction_window
+        self.toggle_predictions_button = toggle_predictions_button
 
     def update_suggest_button_state(self):
         """Updates the button state so its enabled or not based on whose turn it is."""
@@ -52,6 +53,16 @@ class PlayGame:
             self.suggest_move_button.config(state=tk.NORMAL)
         else:
             self.suggest_move_button.config(state=tk.DISABLED)
+
+    def update_predictions(self):
+        if self.assisted_player == self.board.turn:
+            self.toggle_predictions_button.config(state=tk.NORMAL)
+            if self.prediction_window.isVisible:
+                self.prediction_window.deiconify()
+        else:
+            self.toggle_predictions_button.config(state=tk.DISABLED)
+            if self.prediction_window.isVisible:
+                self.prediction_window.withdraw()
     
     def update_transition_sides_state(self):
         """Updates the transition sides button state and variable."""
@@ -127,6 +138,7 @@ class PlayGame:
                     self.board.pop()
                 # Switch turns between players and functionalites
                 self.update_suggest_button_state()
+                self.update_predictions()
                 if self.assisted_player == self.board.turn: # Non-assisted player just moved
                     self.BSL.pre_move_limiting()
                     self.logger.log(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
