@@ -261,39 +261,45 @@ class PredictionWindow(tk.Toplevel):
         # Initialize the piece frequency dictionary with empty lists for each tile
         piece_counts = {tile : [0] * 6 for tile in chess.SQUARES}  # Format: {tile : counts[count_pawns, count_knights, count_bishops, count_rooks, count_queens, count_kings]}
 
-        # Loop through the board states produced by the BSL and count the frequency of each piece type on each tile across all board states, storing the pieces in the piece_freq dictionary
-        for board in self.BSL.board_states:
+        # Initialize storage for calculating the sum of all weights to determine percentage later
+        self.weighted_score_sum = 0
+
+        # Loop through each (index, score) tuple in the PSA output and count the frequency of each piece type on each tile across all board states, storing the pieces in the piece_freq dictionary
+        for boardTuple in self.PSA.board_scores:
+            boardIndex = boardTuple[0] # Retrieve index of board from PSA
+            board = self.BSL.board_states[boardIndex] # Retrieve board using index
+            score = boardTuple[1] # Retrieve score from PSA 
+            shifted = score + 10000 # Shift all scores to be positive
+            normalized = shifted / 20000 # Normalize all scores to be on scale from 0 to 1 
+            weight = normalized ** 3 # Bias strongly towards the higher scores 
+            self.weighted_score_sum += weight # Keep track of sum of all weights
+
+            # Loop through each tile of each board and calculate the frequency of each piece types on each tile adding the weight to bias towards better scoring boards
             for tile in chess.SQUARES:
                 piece = board.piece_at(tile)
                 if piece and piece.color == chess.BLACK: # Only consider opponent pieces for the predictions
-                    piece_counts[tile][piece.piece_type - 1] += 1 # Piece types are 1:pawn, 2:knight, 3:bishop, 4:rook, 5:queen, 6:king
-        
+                    piece_counts[tile][piece.piece_type - 1] += weight # Piece types are 1:pawn, 2:knight, 3:bishop, 4:rook, 5:queen, 6:king 
+
         self.piece_counts = piece_counts # Store the piece counts for use in the piece vision toggle function to determine whether to add back pieces that were removed based on low frequency
         self.create_compiled_prediction_board(piece_counts) # Create the compiled prediction board based on the frequency of pieces in the predictions and the current piece vision toggles
         self.add_back_white_pieces() # Add back white pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces
 
     def create_compiled_prediction_board(self, piece_counts: dict):
         """Create a compiled prediction board based on the frequency of pieces in the predictions and the current piece vision toggles."""
-        states = len(self.BSL.board_states) # Total number of states to be used in percentage calculations for piece frequency across all board states 
         for tile, counts in piece_counts.items():
             total_pieces = sum(counts) # Total of all types of pieces on the current tile across all predicted board states          
 
             # Calculate and add the percentage for each type of piece on the current tile
-            percentage = [(count / states)*100 for count in counts] # Calculate the percentage frequency of each piece type on the tile across all predicted board states when there are multiple piece types on the current tile (Needs to be accessed by board draw to draw the correct outlines.)
+            percentage = [(count / self.weighted_score_sum)*100 for count in counts] # Calculate the percentage frequency of each piece type on the tile across all predicted board states when there are multiple piece types on the current tile (Needs to be accessed by board draw to draw the correct outlines.)
             self.percentages[tile] = percentage
 
             # Using total pieces on the current tile across all predictions, determine which piece to show on the compiled prediction board 
             if total_pieces == 0:
                 continue  # No black pieces predicted on this tile
 
-            if total_pieces == 1:
-                # Only one prediction -> find it
-                piece_type = counts.index(1) + 1 # Piece types are 1-indexed in the counts list, so add 1 to get the actual piece type
-                self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_type, chess.BLACK)) # Update the board with the piece
-            else:
-                # Multiple predictions -> pick the most frequent piece
-                piece_type = counts.index(max(counts)) + 1 # Piece types are 1-indexed in the counts list, so add 1 to get the actual piece type
-                self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_type, chess.BLACK)) # Update the board with the piece
+            # Pick the most frequent piece
+            piece_type = counts.index(max(counts)) + 1 # Piece types are 1-indexed in the counts list, so add 1 to get the actual piece type
+            self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_type, chess.BLACK)) # Update the board with the piece
         
         #for tile in chess.SQUARES:
         #    print(f"Tile {chess.square_name(tile)}: Percentages {self.percentages[tile]}") # DEBUG print to check the calculated percentages for each tile
