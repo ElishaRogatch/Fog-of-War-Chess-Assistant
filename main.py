@@ -15,7 +15,7 @@ from pathlib import Path
 from gui_io import MessageOutput
 from game_settings import GameSettings, SettingsManager
 
-
+from predictions import PredictionWindow
 
 class ChessGUI:
     def __init__(self, root, names: list[str], settings: GameSettings):
@@ -67,7 +67,6 @@ class ChessGUI:
         self.suggest_move_button.pack(side=tk.LEFT)
         self.play_game.update_suggest_button_state()
         self.transition_sides_button = self.play_game.transition_sides_button
-        self.transition_sides_button.config(bg="SystemButtonShadow")
         self.transition_sides_button.pack(side=tk.LEFT)
         self.print_captured_button = tk.Button(self.root, text="Print Captured Pieces", command=lambda: self.captured_message(self.play_game.captured_pieces))
         self.print_captured_button.pack(side=tk.LEFT)
@@ -95,7 +94,30 @@ class ChessGUI:
         
         # Start the chess engine
         self.engine.start_engine()
-        
+    
+        # Create the prediction window via the prediction class and pass the root
+        self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL, self.board) 
+
+        def toggle_predictions():
+            self.prediction_window.toggle()
+            # Change the button color based on the visibility of the prediction window
+            if self.prediction_window.isVisible:
+                self.toggle_predictions_button.config(relief="sunken", bg="SystemButtonShadow") # Shadow when toggled on
+            else:
+                self.toggle_predictions_button.config(relief="raised", bg="SystemButtonFace") # Light when toggled off     
+
+        # Override the close button to toggle visibility instead of destroying the window
+        self.prediction_window.protocol("WM_DELETE_WINDOW", toggle_predictions)
+
+        # Create a button to toggle the prediction window
+        self.toggle_predictions_button = tk.Button(self.root, text="Toggle Predictions", command=toggle_predictions)
+        self.toggle_predictions_button.config(bg="SystemButtonFace")
+        self.toggle_predictions_button.pack()
+
+        self.play_game.set_prediction_window(self.prediction_window, self.toggle_predictions_button) # Pass the prediction window instance to the play game class    
+
+        # Re-hide the prediction window on startup
+        self.prediction_window.withdraw()    
     def captured_message(self, captured_pieces):
         """Display the captured pieces for both players."""
         return MessageOutput(

@@ -13,6 +13,7 @@ import tkinter as tk
 from board_state_limiter import BoardStateLimiter
 from probable_state_analyzer import ProbableStateAnalyzer
 import copy
+from predictions import PredictionWindow
 
 class PlayGame:
     def __init__(
@@ -68,20 +69,35 @@ class PlayGame:
         self.wait_lock = tk.IntVar(root, value= 0) # False
         self.game_over.assign_wait_lock(self.wait_lock)
 
+    def set_prediction_window(self, prediction_window: PredictionWindow, toggle_predictions_button: tk.Button):
+        """Set the prediction window instance for this class."""
+        self.prediction_window = prediction_window
+        self.toggle_predictions_button = toggle_predictions_button
+
     def update_suggest_button_state(self):
         """Updates the button state so its enabled or not based on whose turn it is."""
         if self.assisted_player == self.board.turn:
             self.suggest_move_button.config(state=tk.NORMAL)
         else:
             self.suggest_move_button.config(state=tk.DISABLED)
+
+    def update_predictions(self):
+        if self.assisted_player == self.board.turn:
+            self.toggle_predictions_button.config(state=tk.NORMAL)
+            if self.prediction_window.isVisible:
+                self.prediction_window.deiconify()
+        else:
+            self.toggle_predictions_button.config(state=tk.DISABLED)
+            if self.prediction_window.isVisible:
+                self.prediction_window.withdraw()
     
     def update_transition_sides_state(self):
         """Updates the transition sides button state and variable."""
         if self.transition_sides.get():
-            self.transition_sides_button.config(bg="SystemButtonShadow")
+            self.transition_sides_button.config(relief= tk.RAISED, bg="SystemButtonFace")
             self.transition_sides.set(False)
         else:
-            self.transition_sides_button.config(bg="SystemButtonFace")
+            self.transition_sides_button.config(relief= tk.SUNKEN, bg="SystemButtonShadow")
             self.transition_sides.set(True)
 
     def update_turn_label(self):
@@ -151,11 +167,16 @@ class PlayGame:
                     self.board.pop()
                 # Switch turns between players and functionalites
                 self.update_suggest_button_state()
+                self.update_predictions()
                 if self.assisted_player == self.board.turn: # Non-assisted player just moved
                     self.BSL.pre_move_limiting()
                     self.logger.log(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
                     self.PSA.analyze_states()
                     self.logger.log(f"Board scores \n{self.PSA.board_scores}")
+
+                    # Data pass to the prediction window to have it update the predictions list
+                    self.prediction_window.update_predictions(self.PSA.board_scores)
+
                     #for i in self.PSA.board_scores: #DEBUG PSA board print
                     #    print(f"board number {i[0]} score is {i[1]}")#DEBUG PSA board print
                     #    print(self.BSL.board_states[i[0]])#DEBUG PSA board print
