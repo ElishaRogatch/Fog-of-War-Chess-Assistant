@@ -118,16 +118,11 @@ class DrawBoard:
                     if color:
                         print(f"{'w' if piece.color else 'b'}{piece_str}_outline_{color}")
                         outline_image = self.outline_images.get(f"{'w' if piece.color else 'b'}{piece_str}_outline_{color}") # Get the corresponding outline image based on the piece type and color
-                        if outline_image:
-                            pass
-                        else:
-                            print("SOMETHING WENT WRONG!!!")
                     else:
                         outline_image = self.piece_images.get(f"{'w' if piece.color else 'b'}{piece_str}") # If no outline, just show the piece image (includes white pieces)
-                    if outline_image:
-                        x = col * self.square_size
-                        y = row * self.square_size
-                        self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, image=outline_image, tags="outline")
+                    x = col * self.square_size
+                    y = row * self.square_size
+                    self.canvas.create_image(x + self.square_size // 2, y + self.square_size // 2, image=outline_image, tags="outline")
 
     def get_outline_color(self, percentage):
         """Determine the color of the outline based on the percentage frequency."""
