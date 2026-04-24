@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict
 from gui_io import YesNoIO
 from utils import to_color, str_to_bool
-from pathlib import Path
 from tkinter import filedialog
 
 
@@ -58,9 +57,9 @@ class SettingsManager(tk.Toplevel):
                 ),
                 "search_depth" : Setting(
                     10,
-                    "Search Depth\nMatch your time per turn to the table below \{Table\}",
+                    "Search Depth\nMatch your time per turn to the table below\n1-5\t6-10\t11-15\t16-20\t21-25\n1s\t2s\t5s\t10s\t20s",
                     "entryslider",
-                    4,
+                    5,
                     {
                         "min" : 1,
                         "max" : 25,

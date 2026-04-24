@@ -5,7 +5,6 @@ if TYPE_CHECKING:
 
 import time
 import shutil
-from datetime import datetime
 from pathlib import Path
 
 class FowLogger:
@@ -33,7 +32,6 @@ class FowLogger:
             log_folder_path.mkdir(exist_ok=True)
                 
         epoch_time = int(time.time())
-        #datetime.fromtimestamp(epoch_time).strftime("%Y-%m-%d %H:%M:%S") #TODO REMOVE IF NOT GOING TO USE
         self.filename = f"{log_folder_path}/{epoch_time}.log"
         pass
     

@@ -13,7 +13,6 @@ import chess
 import chess.engine
 import platform
 from bias_eval import BiasScorer
-import tkinter as tk
 from tkinter import filedialog
 import os
 from pathlib import Path
