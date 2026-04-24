@@ -1,12 +1,17 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from probable_state_analyzer import ProbableStateAnalyzer
+    from board_state_limiter import BoardStateLimiter
+
 import tkinter as tk
 import chess
 from board_draw import DrawBoard
 import fow_chess
-from probable_state_analyzer import ProbableStateAnalyzer
-from board_state_limiter import BoardStateLimiter
+
 
 class PredictionWindow(tk.Toplevel):
-    def __init__(self, parent, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter, main_board: fow_chess.FowBoard):
+    def __init__(self, parent, PSA: ProbableStateAnalyzer, BSL: BoardStateLimiter, main_board: fow_chess.FowBoard, assisted_player: chess.Color):
         """Initialize the prediction window."""
         super().__init__(parent)
         self.parent = parent
@@ -17,6 +22,9 @@ class PredictionWindow(tk.Toplevel):
         self.PSA = PSA
         self.BSL = BSL
         self.main_board = main_board
+        
+        # Store reference to assisted player
+        self.assisted_player = assisted_player
 
         # Chess board size
         self.board_size = 8
@@ -36,7 +44,10 @@ class PredictionWindow(tk.Toplevel):
         # Lists to store button objects and images 
         self.buttons = [] # [Prediction 1, Prediction 2, Prediction 3, Prediction 4, Prediction 5, Compiled Prediction, Toggle bp vision, Toggle br vision, Toggle bn vision, Toggle bb vision, Toggle bq vision, Toggle bk vision]
         self.button_images = []
-        self.piece_names = ["bp", "bn", "bb", "br", "bq", "bk"] 
+        if self.assisted_player == chess.WHITE:
+            self.piece_names = ["bp", "bn", "bb", "br", "bq", "bk"] 
+        else:
+            self.piece_names = ["wp", "wn", "wb", "wr", "wq", "wk"] 
         self.initialize_percentages() # This will be used to store the percentage frequencies of pieces on tiles across all predicted board states for use in drawing outlines on the prediction board based on piece frequency in the predictions
 
         # Configuration for the buttons
@@ -236,7 +247,7 @@ class PredictionWindow(tk.Toplevel):
         # Loop through the squares on the board
         for tile in chess.SQUARES:
             piece = self.compiled_prediction_board.piece_at(tile)
-            if piece is not None and piece.color == chess.BLACK: # Only consider opponent pieces for the predictions
+            if piece is not None and piece.color != self.assisted_player: # Only consider opponent pieces for the predictions
                 if chess.PIECE_SYMBOLS[piece.piece_type] == piece_type[1]: # If the piece type matches the toggled piece type, set it on the compiled prediction board, otherwise remove it from the compiled prediction board
                     self.compiled_prediction_board.set_piece_at(tile, piece)
                 else:
@@ -250,7 +261,7 @@ class PredictionWindow(tk.Toplevel):
             piece_index = self.piece_names.index(piece_type) # Get the index of the piece type in the piece names list to access the corresponding count in the piece counts
             count = self.piece_counts[tile][piece_index] # Get the count of the toggled piece type on the tile across all predicted board states
             if count > 0: # If the piece is present on at least one predicted board state, add it back to the compiled prediction board so that it is visible when toggling on the piece vision
-                self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_index + 1, chess.BLACK)) # Piece types are 1-indexed in the piece counts list, so add 1 to get the actual piece type and set it on the compiled prediction board
+                self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_index + 1, not self.assisted_player)) # Piece types are 1-indexed in the piece counts list, so add 1 to get the actual piece type and set it on the compiled prediction board
  
     # --------- Compiled Prediction Creation and Updating ---------
     def create_compiled_prediction(self):
@@ -277,12 +288,12 @@ class PredictionWindow(tk.Toplevel):
             # Loop through each tile of each board and calculate the frequency of each piece types on each tile adding the weight to bias towards better scoring boards
             for tile in chess.SQUARES:
                 piece = board.piece_at(tile)
-                if piece and piece.color == chess.BLACK: # Only consider opponent pieces for the predictions
+                if piece and piece.color != self.assisted_player: # Only consider opponent pieces for the predictions
                     piece_counts[tile][piece.piece_type - 1] += weight # Piece types are 1:pawn, 2:knight, 3:bishop, 4:rook, 5:queen, 6:king 
 
         self.piece_counts = piece_counts # Store the piece counts for use in the piece vision toggle function to determine whether to add back pieces that were removed based on low frequency
         self.create_compiled_prediction_board(piece_counts) # Create the compiled prediction board based on the frequency of pieces in the predictions and the current piece vision toggles
-        self.add_back_white_pieces() # Add back white pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces
+        self.add_back_pieces() # Add back assisted players pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces
 
     def create_compiled_prediction_board(self, piece_counts: dict):
         """Create a compiled prediction board based on the frequency of pieces in the predictions and the current piece vision toggles."""
@@ -295,21 +306,21 @@ class PredictionWindow(tk.Toplevel):
 
             # Using total pieces on the current tile across all predictions, determine which piece to show on the compiled prediction board 
             if total_pieces == 0:
-                continue  # No black pieces predicted on this tile
+                continue  # No non assisted player pieces predicted on this tile
 
             # Pick the most frequent piece
             piece_type = counts.index(max(counts)) + 1 # Piece types are 1-indexed in the counts list, so add 1 to get the actual piece type
-            self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_type, chess.BLACK)) # Update the board with the piece
+            self.compiled_prediction_board.set_piece_at(tile, chess.Piece(piece_type, not self.assisted_player)) # Update the board with the piece
         
         #for tile in chess.SQUARES:
         #    print(f"Tile {chess.square_name(tile)}: Percentages {self.percentages[tile]}") # DEBUG print to check the calculated percentages for each tile
 
-    def add_back_white_pieces(self):
-        """Add back white pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces."""
+    def add_back_pieces(self):
+        """Add back assisted players pieces to the compiled prediction board based on the current board state, since the predictions only concern the opponent's pieces."""
         for tile in chess.SQUARES:
-            piece = self.main_board.piece_at(tile) # Check the current board state for white pieces to add back to the compiled prediction board
-            if piece and piece.color == chess.WHITE:
-                self.compiled_prediction_board.set_piece_at(tile, piece) # Add back the white piece to the compiled prediction board
+            piece = self.main_board.piece_at(tile) # Check the current board state for assisted players pieces to add back to the compiled prediction board
+            if piece and piece.color == self.assisted_player:
+                self.compiled_prediction_board.set_piece_at(tile, piece) # Add back the players piece to the compiled prediction board
     
     def initialize_percentages(self):
         """Initialize the percentages dictionary with 0% for all piece types on all tiles."""

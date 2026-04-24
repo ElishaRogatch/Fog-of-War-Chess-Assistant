@@ -96,7 +96,7 @@ class ChessGUI:
         self.engine.start_engine()
     
         # Create the prediction window via the prediction class and pass the root
-        self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL, self.board) 
+        self.prediction_window = PredictionWindow(self.root, self.play_game.PSA, self.play_game.BSL, self.board, self.assisted_player) 
 
         def toggle_predictions():
             self.prediction_window.toggle()
@@ -115,6 +115,7 @@ class ChessGUI:
         self.toggle_predictions_button.pack(side=tk.LEFT)
 
         self.play_game.set_prediction_window(self.prediction_window, self.toggle_predictions_button) # Pass the prediction window instance to the play game class    
+        self.play_game.update_predictions()
 
         # Re-hide the prediction window on startup
         self.prediction_window.withdraw()    

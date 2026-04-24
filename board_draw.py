@@ -41,7 +41,7 @@ class DrawBoard:
         return piece_images
     
     def load_outline_images(self):
-        outlines = ["bp", "br", "bn", "bb", "bq", "bk"]
+        outlines = ["bp", "br", "bn", "bb", "bq", "bk","wp", "wr", "wn", "wb", "wq", "wk"]
         outline_images = {}
         for outline in outlines:
             for color in ["red", "yellow", "green"]:
@@ -116,7 +116,12 @@ class DrawBoard:
                     color = self.get_outline_color(percentage) # Determine the color of the outline based on the percentage
                     piece_str = piece.symbol().lower() # Get the piece symbol in lowercase (e.g., 'p', 'r', 'n', etc.)
                     if color:
-                        outline_image = self.outline_images.get(f"b{piece_str}_outline_{color}") # Get the corresponding outline image based on the piece type and color
+                        print(f"{'w' if piece.color else 'b'}{piece_str}_outline_{color}")
+                        outline_image = self.outline_images.get(f"{'w' if piece.color else 'b'}{piece_str}_outline_{color}") # Get the corresponding outline image based on the piece type and color
+                        if outline_image:
+                            pass
+                        else:
+                            print("SOMETHING WENT WRONG!!!")
                     else:
                         outline_image = self.piece_images.get(f"{'w' if piece.color else 'b'}{piece_str}") # If no outline, just show the piece image (includes white pieces)
                     if outline_image:
