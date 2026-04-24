@@ -21,8 +21,9 @@ class BiasScorer:
 
     def move_bias_applicator(self, move: chess.Move, stockfish_score: int, board: FowBoard, vision_before_score: float) -> int:
         """Adjusts the stockfish score of a move based on certain biasing parameters."""
-        if not self.biases:
-            return stockfish_score  # No bias provided, return the Stockfish score as-is
+        # TODO MAKE this a developer setting???
+        #if not self.biases:
+        #    return stockfish_score  # No bias provided, return the Stockfish score as-is
 
         # Move Bias Applicator code
         
