@@ -1,8 +1,15 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fow_chess import FowBoard
+    from chess import Bitboard
+    
 import chess
 import copy
 
+
 class BoardStateLimiter:
-    def __init__(self, board, board_states):
+    def __init__(self, board: FowBoard, board_states: list[FowBoard]):
         self.board = board
         self.board_states = board_states
     
@@ -18,7 +25,7 @@ class BoardStateLimiter:
     def pre_move_limiting(self):
         """For each boardstate find all possible legal moves and create a new state for each possible move being made and 
         remove contradincting and duplicate boardstates."""
-        new_board_states = []
+        new_board_states: list[FowBoard] = []
         for boardstate in self.board_states:
             for move in boardstate.fow_legal_moves:
                 new_boardstate = copy.copy(boardstate)
@@ -39,7 +46,7 @@ class BoardStateLimiter:
         # make new states the old states (for next move)
         self.board_states = new_board_states
     
-    def _does_match_visibility(self, board1, board2, visible, semi_visible):
+    def _does_match_visibility(self, board1: FowBoard, board2: FowBoard, visible: Bitboard, semi_visible: Bitboard) -> bool:
         if ~board1.occupied & (visible | semi_visible) != ~board2.occupied & (visible | semi_visible): # empty squares don't match
             return False
         elif board1.pawns & visible != board2.pawns & visible: # visible pawns don't match
@@ -57,14 +64,14 @@ class BoardStateLimiter:
         else:
             return True
      
-    def _remove_contradicting_states(self, boardstates):
-        visible = self.board.get_fow_visibility()
-        visible = visible | self.board.get_ep_visibility(visible)
-        semi_visible = self.board.get_semi_visibility(visible)
+    def _remove_contradicting_states(self, boardstates: list[FowBoard]) -> list[FowBoard]:
+        visible: Bitboard = self.board.get_fow_visibility()
+        visible = visible | self.board.get_ep_visibility()
+        semi_visible: Bitboard = self.board.get_semi_visibility(visible)
         # remove any states that contradict visible observations
         return [boardstate for boardstate in boardstates if self._does_match_visibility(self.board, boardstate, visible, semi_visible)]
        
-    def _is_duplicate_state(self, boardstate, boardstates):
+    def _is_duplicate_state(self, boardstate: FowBoard, boardstates: list[FowBoard]) -> tuple[bool, FowBoard | None]:
         for unique_boardstate in boardstates:
             # use transposition key rather than just '==' to limit the states by not concerning over differences in the half-move count between states
             if boardstate.stored_transposition_key == unique_boardstate.stored_transposition_key:

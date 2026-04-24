@@ -1,3 +1,5 @@
 __pycache__/*
 *.exe
-gamelog.txt
+settings.ini
+Archived Logs/*
+Logs/*

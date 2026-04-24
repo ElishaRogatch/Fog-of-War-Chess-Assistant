@@ -40,7 +40,7 @@ class FowBoard(Board):
     def __init__(self,*args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.stored_transposition_key = None
-        self.last_piece_moved = None
+        self.last_piece_moved : list[PieceType] = []
         
     @property
     def fow_legal_moves(self) -> LegalFowMoveGenerator:
@@ -303,10 +303,12 @@ class FowBoard(Board):
             double_moves = double_moves & ~(single_moves >> 8) & ~(self.occupied >> 8)
         return attack_moves | single_moves | double_moves
         
-    def get_ep_visibility(self, visible) -> Bitboard:
-        """Gets the ep visibility mask for the player to move."""
+    def get_ep_visibility(self) -> Bitboard:
+        """Gets the ep visibility mask for the player to move.
+        Can overlap with visibility mask"""
         ep_visible = BB_EMPTY
-        if self.ep_square and visible & BB_SQUARES[self.ep_square]:
+        # If a pawn moved to setup a potential ep square, and there is a way to take on that square with a pawn
+        if self.ep_square and any(True for _ in self.generate_pseudo_legal_ep()):
             if self.turn == WHITE:
                 ep_visible = BB_SQUARES[self.ep_square - 8]
             else:

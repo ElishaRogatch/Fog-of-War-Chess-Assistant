@@ -1,3 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fow_chess import FowBoard
+    from board_draw import DrawBoard
+    from game_over import GameOver
+    from fow_engine import FowEngine
+    from fow_logger import FowLogger
+    from game_settings import GameSettings
+
 import chess
 import tkinter as tk
 from board_state_limiter import BoardStateLimiter
@@ -5,7 +15,21 @@ from probable_state_analyzer import ProbableStateAnalyzer
 import copy
 
 class PlayGame:
-    def __init__(self, root, board, canvas, square_size, assisted_player, board_draw, game_over, engine, biases, logger):
+    def __init__(
+        self, 
+        root, 
+        board: FowBoard, 
+        canvas: tk.Canvas, 
+        square_size: int, 
+        assisted_player: chess.Color, 
+        board_draw: DrawBoard, 
+        game_over: GameOver, 
+        engine: FowEngine, 
+        biases: dict[str, float], 
+        logger: FowLogger,
+        names: list[str],
+        settings: GameSettings
+    ):
         """Initialize game state and GUI elements."""
         self.root = root
         self.board = board
@@ -17,20 +41,23 @@ class PlayGame:
         self.engine = engine
         self.biases = biases
         self.logger = logger
+        self.names = names
+        self.settings = settings
 
         # Track selected square and moves
-        self.selected_square = None
+        self.selected_square: chess.Square | None = None
         
         # Create instance of board state limiter and probable state analyzer
         self.BSL = BoardStateLimiter(self.board, [copy.deepcopy(self.board)])
         self.PSA = ProbableStateAnalyzer(self.BSL, self.engine, self.biases)
         
         # Initialized buttons
-        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA))
+        self.suggest_move_button = tk.Button(self.root, text="Make Suggestion",command= lambda: self.engine.suggest_player_move(self.BSL, self.PSA, self.settings.suggested_moves_count))
         self.transition_sides_button = tk.Button(self.root, text="Player Transition Toggle", command= lambda: self.update_transition_sides_state())
         
         # Player label
-        self.turn_label = tk.Label(self.root, text="White's Turn", font=16)
+        self.turn_label = tk.Label(self.root, text="", font=16)
+        self.update_turn_label()
         self.turn_label.pack()
         
         # List of captured pieces
@@ -59,8 +86,7 @@ class PlayGame:
 
     def update_turn_label(self):
         """Updates the turn label to show whose turn it is."""
-        current_turn = "White's Turn" if self.board.turn else "Black's Turn"
-        self.turn_label.config(text=current_turn)
+        self.turn_label.config(text=f"{self.names[self.board.turn]}'s Turn")
         
     def on_square_click(self, event):
         """Handle click events to select and move pieces."""
@@ -70,9 +96,7 @@ class PlayGame:
         clicked_square = chess.square(col, row) # placed here so that it is storing the current player's moves and not the next player
 
         # Clear existing move dots when clicking a new square
-        for dot in self.board_draw.move_dots:
-            self.canvas.delete(dot)
-        self.board_draw.move_dots = []
+        self.board_draw.clear_dots()
 
         if self.selected_square is None:
             # Select the piece if any
@@ -83,7 +107,7 @@ class PlayGame:
                 self.board_draw.show_possible_moves(clicked_square)
         else:
             # Try to make a move with promotion if applicable
-            if (str(self.board.piece_at(self.selected_square)).upper()=='P' and (clicked_square >= 56 or clicked_square <= 7)):
+            if (self.board.piece_type_at(self.selected_square) == chess.PAWN and (clicked_square >= 56 or clicked_square <= 7)): # Make sure pawn is on backrank
                 move = chess.Move.from_uci(str(chess.Move(self.selected_square, clicked_square))+"q")
                 ask_promotion = True
             else:
@@ -91,7 +115,8 @@ class PlayGame:
                 move = chess.Move(self.selected_square, clicked_square)
                 ask_promotion = False
             if move in self.board.fow_legal_moves:
-                self.logger.log(f"{chess.COLOR_NAMES[self.board.turn]} makes the move {move.uci()}")
+                self.logger.log(f"{self.names[self.board.turn]} makes the move {move.uci()}")
+                self.logger.just_log(self.board)
                 if ask_promotion:
                     # Have user choose promotion piece
                     promotion_piece = tk.StringVar(value="Queen")
@@ -107,7 +132,11 @@ class PlayGame:
                 captured_piece = self.board.piece_at(clicked_square)
                 if captured_piece: # if captured_piece is not None
                     print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
-                    self.captured_pieces.append(captured_piece.symbol())
+                    self.captured_pieces.append(chess.UNICODE_PIECE_SYMBOLS[captured_piece.symbol()])
+                elif self.board.is_en_passant(move):
+                    captured_piece = self.board.piece_at(chess.square(chess.square_file(clicked_square), chess.square_rank(self.selected_square)))
+                    print(f"{chess.COLOR_NAMES[captured_piece.color]} {chess.PIECE_NAMES[captured_piece.piece_type]} was captured!")
+                    self.captured_pieces.append(chess.UNICODE_PIECE_SYMBOLS[captured_piece.symbol()])
                 # Update the board with the move
                 self.board.push(move)
                 # Check for game-ending conditions
@@ -148,7 +177,7 @@ class PlayGame:
                         if self.wait_lock.get() != 2:
                             self.root.wait_variable(self.wait_lock)
                             self.wait_lock.set(0) # False
-                        self.canvas.delete("cover")
+                        self.board_draw.clear_cover()
                         self.canvas.bind("<Button-1>", self.on_square_click)
                         self.update_turn_label()
                 else:
@@ -164,7 +193,7 @@ class PlayGame:
     
 class PromotionInput(tk.Toplevel):
     """Prompt user to select a piece for pawn promotion."""
-    def __init__(self, parent, promotion_piece):
+    def __init__(self, parent, promotion_piece: tk.StringVar):
         super().__init__(parent)
         self.parent = parent
         self.iconbitmap("images/icons/Promotion.ico")
@@ -172,7 +201,7 @@ class PromotionInput(tk.Toplevel):
         self.minsize(0, 150)
         self.title("Pawn Promotion")
         
-    # Makes this popup window behave like a dependent child of the parent
+        # Makes this popup window behave like a dependent child of the parent
         self.transient(parent)
         # Grabs the focus and puts it onto this child window
         self.grab_set()
