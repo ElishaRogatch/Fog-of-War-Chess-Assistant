@@ -112,7 +112,7 @@ class ChessGUI:
         # Create a button to toggle the prediction window
         self.toggle_predictions_button = tk.Button(self.root, text="Toggle Predictions", command=toggle_predictions)
         self.toggle_predictions_button.config(bg="SystemButtonFace")
-        self.toggle_predictions_button.pack()
+        self.toggle_predictions_button.pack(side=tk.LEFT)
 
         self.play_game.set_prediction_window(self.prediction_window, self.toggle_predictions_button) # Pass the prediction window instance to the play game class    
 

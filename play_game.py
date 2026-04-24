@@ -167,7 +167,6 @@ class PlayGame:
                     self.board.pop()
                 # Switch turns between players and functionalites
                 self.update_suggest_button_state()
-                self.update_predictions()
                 if self.assisted_player == self.board.turn: # Non-assisted player just moved
                     self.BSL.pre_move_limiting()
                     self.logger.log(f"Number of potential pre-turn states {len(self.BSL.board_states)}")
@@ -191,6 +190,8 @@ class PlayGame:
                     if self.wait_lock.get() != 2:
                         self.wait_lock.set(0) # False
                         self.canvas.bind("<Button-1>", self.on_square_click)
+                        if self.assisted_player != self.board.turn:
+                            self.update_predictions()
                         self.board_draw.update_pieces()
                         self.board_draw.draw_fog()
                         self.board_draw.draw_cover()
@@ -201,8 +202,11 @@ class PlayGame:
                         self.board_draw.clear_cover()
                         self.canvas.bind("<Button-1>", self.on_square_click)
                         self.update_turn_label()
+                        if self.assisted_player == self.board.turn:
+                            self.update_predictions()
                 else:
                     # Draw the board and fog for the next player
+                    self.update_predictions()
                     self.board_draw.update_pieces()
                     self.board_draw.draw_fog()
                     self.update_turn_label()
